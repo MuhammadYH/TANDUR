@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tandur Ops — Monitoring Pengumpulan Limbah</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F5FAF3;
+  --paper-2:#E8F2E6;
+  --ink:#171510;
+  --navy:#0D3E74;
+  --navy-2:#1B63AE;
+  --kraft:#2FA84A;
+  --kraft-dark:#1F7F37;
+  --cyan:#238BD2;
+  --magenta:#EC1E79;
+  --yellow:#F5C518;
+  --line: rgba(23,21,16,0.16);
+  --line-strong: rgba(23,21,16,0.35);
+  --line-invert: rgba(247,243,234,0.18);
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Plus Jakarta Sans', sans-serif;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.display{
+  font-family:'Plus Jakarta Sans', sans-serif;
+  letter-spacing:-0.01em;
+  line-height:1.15;
+  font-weight:800;
+}
+.mono{ font-family:'IBM Plex Mono', monospace; letter-spacing:0.02em; }
+button{ font-family:inherit; cursor:pointer; }
+a{ color:inherit; text-decoration:none; }
+
+/* ---------- shell ---------- */
+.shell{ display:flex; min-height:100vh; }
+
+/* ---------- sidebar ---------- */
+.sidebar{
+  width:240px; flex:none;
+  background:var(--navy); color:var(--paper);
+  display:flex; flex-direction:column;
+  position:sticky; top:0; height:100vh;
+}
+.side-logo{ display:flex; align-items:center; gap:10px; padding:26px 22px 22px; border-bottom:1px solid var(--line-invert); }
+.side-logo img{ height:22px; width:auto; flex:none; }
+.side-logo .display{ font-size:19px; color:var(--paper); }
+.side-logo .tag{ display:block; font-size:10px; color:#6FD98A; letter-spacing:0.12em; margin-top:1px; }
+
+.side-nav{ padding:16px 12px; display:flex; flex-direction:column; gap:2px; }
+.side-nav .eyebrow{ font-size:10px; color:rgba(247,243,234,0.45); letter-spacing:0.14em; padding:10px 10px 6px; }
+.side-link{
+  display:flex; align-items:center; gap:11px;
+  padding:11px 12px; border-radius:3px;
+  color:rgba(247,243,234,0.72); font-size:14px; font-weight:500;
+  border-left:2px solid transparent;
+}
+.side-link svg{ width:17px; height:17px; flex:none; stroke:currentColor; }
+.side-link:hover{ background:rgba(247,243,234,0.06); color:var(--paper); }
+.side-link.active{ background:rgba(247,243,234,0.08); color:var(--paper); border-left:2px solid var(--cyan); }
+
+.side-foot{ margin-top:auto; padding:16px 22px 22px; border-top:1px solid var(--line-invert); }
+.side-foot .op{ display:flex; align-items:center; gap:8px; font-size:12px; color:rgba(247,243,234,0.6); }
+.side-foot .dot{ width:6px; height:6px; border-radius:50%; background:#5FD37A; flex:none; }
+.side-foot .rev{ margin-top:6px; font-size:10px; color:rgba(247,243,234,0.35); letter-spacing:0.06em; }
+
+/* ---------- main ---------- */
+.main{ flex:1; min-width:0; }
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:22px 34px; border-bottom:1px solid var(--line);
+  background:var(--paper); position:sticky; top:0; z-index:5;
+}
+.topbar h1{ font-size:26px; }
+.topbar .sub{ font-size:12.5px; color:rgba(23,21,16,0.55); margin-top:3px; font-family:'Plus Jakarta Sans',sans-serif; text-transform:none; font-weight:500; letter-spacing:0; }
+.topbar-right{ display:flex; align-items:center; gap:16px; }
+.today{ font-size:11px; color:rgba(23,21,16,0.5); text-align:right; }
+.avatar{ width:34px; height:34px; border-radius:50%; background:var(--kraft); color:var(--paper); display:flex; align-items:center; justify-content:center; font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:14px; }
+
+.view{ display:none; padding:30px 34px 60px; }
+.view.active{ display:block; }
+
+/* ---------- stat cards ---------- */
+.stat-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:26px; }
+.stat-card{ background:#fff; border:1px solid var(--line); border-radius:4px; padding:18px 18px 16px; position:relative; overflow:hidden; }
+.stat-card::before{ content:""; position:absolute; top:0; left:0; width:100%; height:3px; background:var(--accent, var(--kraft)); }
+.stat-card .lbl{ font-size:11px; color:rgba(23,21,16,0.55); text-transform:uppercase; letter-spacing:0.08em; }
+.stat-card .val{ font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:32px; margin-top:6px; }
+.stat-card .val small{ font-size:16px; font-weight:600; margin-left:2px; }
+.stat-card .trend{ font-size:11.5px; margin-top:6px; display:flex; align-items:center; gap:4px; }
+.trend.up{ color:#2E8B4F; }
+.trend.down{ color:#C23B3B; }
+
+/* ---------- panels ---------- */
+.panel-row{ display:grid; grid-template-columns:1.5fr 1fr; gap:14px; margin-bottom:14px; }
+.panel{ background:#fff; border:1px solid var(--line); border-radius:4px; padding:20px 22px; }
+.panel h2.ph{ font-size:15px; text-transform:none; font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; letter-spacing:0; }
+.panel .ph-sub{ font-size:11.5px; color:rgba(23,21,16,0.5); margin-top:2px; margin-bottom:16px; }
+
+/* mini bar chart */
+.bars{ display:flex; align-items:flex-end; gap:10px; height:150px; padding-top:6px; }
+.bar-col{ flex:1; display:flex; flex-direction:column; align-items:center; gap:8px; height:100%; justify-content:flex-end; }
+.bar{ width:100%; max-width:34px; border-radius:2px 2px 0 0; background:var(--kraft); position:relative; }
+.bar-col .val{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:rgba(23,21,16,0.55); }
+.bar-col .day{ font-size:10.5px; color:rgba(23,21,16,0.55); text-transform:uppercase; letter-spacing:0.05em; }
+
+/* composition legend */
+.comp-item{ display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px dashed var(--line); font-size:13px; }
+.comp-item:last-child{ border-bottom:none; }
+.comp-key{ display:flex; align-items:center; gap:9px; }
+.comp-dot{ width:9px; height:9px; border-radius:50%; flex:none; }
+.comp-item .pct{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:rgba(23,21,16,0.6); }
+
+/* recent list */
+.recent-row{ display:grid; grid-template-columns:1fr 1.3fr 0.8fr 0.8fr; gap:10px; align-items:center; padding:11px 0; border-bottom:1px solid var(--line); font-size:13px; }
+.recent-row:last-child{ border-bottom:none; }
+.recent-row .id{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:rgba(23,21,16,0.45); }
+.recent-row .w{ font-family:'IBM Plex Mono',monospace; text-align:right; }
+.recent-head{ display:grid; grid-template-columns:1fr 1.3fr 0.8fr 0.8fr; gap:10px; padding-bottom:8px; border-bottom:1px solid var(--line-strong); font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em; color:rgba(23,21,16,0.5); }
+.recent-head .w{ text-align:right; }
+
+.status-pill{ display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:600; }
+.status-pill.ok{ background:rgba(46,139,79,0.12); color:#2E8B4F; }
+.status-pill.pending{ background:rgba(245,197,24,0.18); color:#8A6D06; }
+.status-pill.rejected{ background:rgba(194,59,59,0.12); color:#C23B3B; }
+
+/* ---------- riwayat / table ---------- */
+.filter-bar{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px; align-items:center; }
+.filter-bar select, .filter-bar input[type="text"], .filter-bar input[type="date"]{
+  font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; padding:9px 12px;
+  border:1px solid var(--line-strong); border-radius:3px; background:#fff; color:var(--ink);
+}
+.filter-bar .search{ flex:1; min-width:180px; }
+.filter-count{ font-size:12px; color:rgba(23,21,16,0.5); margin-left:auto; font-family:'IBM Plex Mono',monospace; }
+
+.manifest-table{ background:#fff; border:1px solid var(--line); border-radius:4px; overflow:hidden; }
+.mt-head{ display:grid; grid-template-columns:110px 1fr 1fr 100px 1fr 110px; gap:10px; padding:12px 18px; background:var(--paper-2); font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em; color:rgba(23,21,16,0.55); }
+.mt-row{ display:grid; grid-template-columns:110px 1fr 1fr 100px 1fr 110px; gap:10px; padding:14px 18px; border-top:1px solid var(--line); font-size:13px; align-items:center; position:relative; }
+.mt-row::before{ content:""; position:absolute; left:0; top:8px; bottom:8px; width:3px; background:var(--tag-color,var(--kraft)); border-radius:0 2px 2px 0; }
+.mt-row .id{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:rgba(23,21,16,0.5); }
+.mt-row .w{ font-family:'IBM Plex Mono',monospace; }
+.mt-empty{ padding:40px 18px; text-align:center; color:rgba(23,21,16,0.5); font-size:13px; }
+
+/* ---------- settings ---------- */
+.settings-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start; }
+.field{ margin-bottom:16px; }
+.field label{ display:block; font-size:12px; font-weight:600; margin-bottom:6px; color:rgba(23,21,16,0.75); }
+.field .hint{ display:block; font-size:11.5px; font-weight:400; color:rgba(23,21,16,0.5); margin-top:5px; }
+.field input[type="text"], .field input[type="number"], .field input[type="email"], .field select{
+  width:100%; font-family:'Plus Jakarta Sans',sans-serif; font-size:13.5px; padding:10px 12px;
+  border:1px solid var(--line-strong); border-radius:3px; background:#fff; color:var(--ink);
+}
+.field-row{ display:flex; gap:10px; }
+.field-row .field{ flex:1; }
+.toggle-row{ display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--line); }
+.toggle-row:last-child{ border-bottom:none; }
+.toggle-row .tt{ font-size:13.5px; font-weight:600; }
+.toggle-row .td{ font-size:12px; color:rgba(23,21,16,0.55); margin-top:2px; }
+.switch{ position:relative; width:38px; height:22px; flex:none; }
+.switch input{ opacity:0; width:0; height:0; }
+.switch .track{ position:absolute; inset:0; background:var(--line-strong); border-radius:20px; transition:0.15s; }
+.switch .track::after{ content:""; position:absolute; width:16px; height:16px; border-radius:50%; background:#fff; top:3px; left:3px; transition:0.15s; box-shadow:0 1px 2px rgba(0,0,0,0.2); }
+.switch input:checked + .track{ background:var(--kraft); }
+.switch input:checked + .track::after{ transform:translateX(16px); }
+
+.rate-type-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px dashed var(--line); font-size:12.5px; }
+.rate-type-row:last-child{ border-bottom:none; }
+.rate-type-row .rt-key{ display:flex; align-items:center; gap:8px; font-weight:600; }
+.rate-type-row .rt-dot{ width:8px; height:8px; border-radius:50%; flex:none; }
+.rate-type-row input{ width:70px; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12.5px; padding:6px 8px; border:1px solid var(--line-strong); border-radius:3px; }
+
+.save-bar{ display:flex; align-items:center; gap:14px; margin-top:6px; }
+.btn-save{ background:var(--navy); color:var(--paper); border:none; padding:11px 22px; border-radius:3px; font-size:13.5px; font-weight:600; }
+.btn-save:hover{ background:var(--navy-2); }
+.save-msg{ font-size:12.5px; color:#2E8B4F; opacity:0; transition:0.2s; }
+.save-msg.show{ opacity:1; }
+
+/* ---------- gudang (warehouse) ---------- */
+.cap-list{ display:flex; flex-direction:column; gap:14px; }
+.cap-item .cap-top{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:6px; }
+.cap-item .cap-name{ font-size:13px; font-weight:700; }
+.cap-item .cap-loc{ font-size:11.5px; color:rgba(23,21,16,0.5); margin-top:1px; }
+.cap-item .cap-figure{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:rgba(23,21,16,0.6); white-space:nowrap; }
+.cap-bar-track{ height:8px; border-radius:4px; background:var(--paper-2); overflow:hidden; }
+.cap-bar-fill{ height:100%; border-radius:4px; background:var(--kraft); }
+.cap-bar-fill.warn{ background:var(--yellow); }
+.cap-bar-fill.full{ background:#C23B3B; }
+
+.status-pill.tersedia{ background:rgba(46,139,79,0.12); color:#2E8B4F; }
+.status-pill.hampir-penuh{ background:rgba(245,197,24,0.18); color:#8A6D06; }
+.status-pill.penuh{ background:rgba(194,59,59,0.12); color:#C23B3B; }
+.status-pill.diajukan{ background:rgba(245,197,24,0.18); color:#8A6D06; }
+.status-pill.diproses{ background:rgba(35,139,210,0.14); color:#1B63AE; }
+.status-pill.selesai{ background:rgba(46,139,79,0.12); color:#2E8B4F; }
+.status-pill.ditolak{ background:rgba(194,59,59,0.12); color:#C23B3B; }
+
+.nav-badge{ margin-left:auto; background:var(--magenta); color:#fff; font-size:10px; font-weight:700; padding:1px 7px; border-radius:20px; }
+
+/* ---------- panel header with action ---------- */
+.panel-head-row{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; gap:14px; }
+.panel-head-row .ph{ margin-bottom:0; }
+.btn-panel-action{
+  flex:none; display:flex; align-items:center; gap:7px;
+  background:var(--kraft); color:#fff; border:none; padding:10px 16px;
+  border-radius:4px; font-weight:700; font-size:12.5px; white-space:nowrap;
+}
+.btn-panel-action:hover{ background:var(--kraft-dark); }
+.btn-panel-action svg{ width:15px; height:15px; stroke:#fff; }
+
+/* ---------- petani table ---------- */
+.pt-table{ background:#fff; border:1px solid var(--line); border-radius:4px; overflow:hidden; }
+.pt-head{ display:grid; grid-template-columns:100px 1.3fr 1.3fr 1fr 0.9fr 0.9fr 110px; gap:10px; padding:12px 18px; background:var(--paper-2); font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em; color:rgba(23,21,16,0.55); }
+.pt-row{ display:grid; grid-template-columns:100px 1.3fr 1.3fr 1fr 0.9fr 0.9fr 110px; gap:10px; padding:13px 18px; border-top:1px solid var(--line); font-size:13px; align-items:center; }
+.pt-row .id{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:rgba(23,21,16,0.5); }
+.pt-row .grp{ font-size:12px; color:rgba(23,21,16,0.6); }
+.pt-row .poin{ font-family:'IBM Plex Mono',monospace; font-weight:700; color:var(--kraft-dark); }
+.pt-row .rp{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:rgba(23,21,16,0.6); }
+.btn-row-action{ background:none; border:1px solid var(--line-strong); color:var(--ink); padding:6px 11px; border-radius:3px; font-size:11.5px; font-weight:600; }
+.btn-row-action:hover{ background:var(--paper-2); }
+
+/* ---------- pencairan table ---------- */
+.pc-table{ background:#fff; border:1px solid var(--line); border-radius:4px; overflow:hidden; }
+.pc-head{ display:grid; grid-template-columns:100px 100px 1.2fr 1fr 0.8fr 0.9fr 1fr 0.9fr 1.4fr; gap:10px; padding:12px 18px; background:var(--paper-2); font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em; color:rgba(23,21,16,0.55); }
+.pc-row{ display:grid; grid-template-columns:100px 100px 1.2fr 1fr 0.8fr 0.9fr 1fr 0.9fr 1.4fr; gap:10px; padding:13px 18px; border-top:1px solid var(--line); font-size:13px; align-items:center; }
+.pc-row .id{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:rgba(23,21,16,0.5); }
+.pc-row .poin, .pc-row .rp{ font-family:'IBM Plex Mono',monospace; }
+.pc-row .rp{ font-weight:700; }
+.pc-actions{ display:flex; gap:6px; flex-wrap:wrap; }
+.btn-approve{ background:var(--kraft); color:#fff; border:none; padding:6px 10px; border-radius:3px; font-size:11px; font-weight:700; }
+.btn-approve:hover{ background:var(--kraft-dark); }
+.btn-reject{ background:none; border:1px solid rgba(194,59,59,0.4); color:#C23B3B; padding:6px 10px; border-radius:3px; font-size:11px; font-weight:700; }
+.btn-reject:hover{ background:rgba(194,59,59,0.08); }
+.btn-done{ background:var(--navy); color:#fff; border:none; padding:6px 10px; border-radius:3px; font-size:11px; font-weight:700; }
+.btn-done:hover{ background:var(--navy-2); }
+
+.gd-table{ background:#fff; border:1px solid var(--line); border-radius:4px; overflow:hidden; }
+.gd-head{ display:grid; grid-template-columns:1.1fr 0.9fr 1fr 0.8fr 0.9fr 0.9fr; gap:10px; padding:12px 18px; background:var(--paper-2); font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em; color:rgba(23,21,16,0.55); }
+.gd-row{ display:grid; grid-template-columns:1.1fr 0.9fr 1fr 0.8fr 0.9fr 0.9fr; gap:10px; padding:14px 18px; border-top:1px solid var(--line); font-size:13px; align-items:center; position:relative; }
+.gd-row::before{ content:""; position:absolute; left:0; top:8px; bottom:8px; width:3px; background:var(--tag-color,var(--kraft)); border-radius:0 2px 2px 0; }
+.gd-row .id{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:rgba(23,21,16,0.5); }
+.gd-row .w{ font-family:'IBM Plex Mono',monospace; }
+.gd-type-key{ display:flex; align-items:center; gap:8px; }
+.gd-type-key .dot{ width:8px; height:8px; border-radius:50%; flex:none; background:var(--tag-color,var(--kraft)); }
+
+/* ---------- floating pickup button ---------- */
+.fab-pickup{
+  position:fixed; right:26px; bottom:26px; z-index:60;
+  display:flex; align-items:center; gap:9px;
+  background:var(--kraft); color:#fff; border:none;
+  padding:15px 22px 15px 18px; border-radius:999px;
+  font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:13.5px;
+  box-shadow:0 14px 30px rgba(23,21,16,0.28), 0 2px 8px rgba(23,21,16,0.15);
+  transition:transform 0.15s, background 0.15s;
+}
+.fab-pickup:hover{ background:var(--kraft-dark); transform:translateY(-2px); }
+.fab-pickup svg{ width:19px; height:19px; flex:none; stroke:#fff; }
+@media (max-width: 700px){
+  .fab-pickup span{ display:none; }
+  .fab-pickup{ padding:15px; border-radius:50%; right:18px; bottom:18px; }
+}
+
+/* ---------- modal ---------- */
+.modal-backdrop{ position:fixed; inset:0; background:rgba(23,21,16,0.45); backdrop-filter:blur(2px); z-index:100; display:none; align-items:center; justify-content:center; padding:20px; }
+.modal-backdrop.open{ display:flex; }
+.modal{ background:#fff; border-radius:8px; width:min(460px,100%); padding:26px 26px 22px; box-shadow:0 30px 60px rgba(23,21,16,0.3); max-height:92vh; overflow-y:auto; }
+.modal h3{ font-size:19px; margin-bottom:4px; }
+.modal .modal-sub{ font-size:12.5px; color:rgba(23,21,16,0.55); margin-bottom:20px; font-weight:500; }
+.modal-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:22px; }
+.btn-ghost{ background:none; border:1px solid var(--line-strong); color:var(--ink); padding:11px 18px; border-radius:4px; font-weight:600; font-size:13px; }
+.btn-ghost:hover{ background:var(--paper-2); }
+
+/* ---------- toast ---------- */
+.toast{ position:fixed; left:50%; bottom:100px; transform:translate(-50%,10px); background:var(--ink); color:var(--paper); font-family:'IBM Plex Mono',monospace; font-size:12.5px; padding:12px 20px; border-radius:6px; opacity:0; pointer-events:none; transition:opacity 0.2s, transform 0.2s; z-index:200; max-width:min(90vw,420px); text-align:center; }
+.toast.show{ opacity:1; transform:translate(-50%,0); }
+
+@media (max-width: 980px){
+  .stat-grid{ grid-template-columns:repeat(2,1fr); }
+  .panel-row{ grid-template-columns:1fr; }
+  .settings-grid{ grid-template-columns:1fr; }
+  .mt-head, .mt-row{ grid-template-columns:90px 1fr 1fr 90px; }
+  .mt-head span:nth-child(5), .mt-head span:nth-child(6), .mt-row .loc, .mt-row .status-pill{ display:none; }
+  .gd-head, .gd-row{ grid-template-columns:1fr 1fr 90px; }
+  .gd-head span:nth-child(2), .gd-head span:nth-child(5), .gd-head span:nth-child(6),
+  .gd-row .gd-loc, .gd-row .gd-updated, .gd-row .gd-status{ display:none; }
+  .pt-head, .pt-row{ grid-template-columns:1fr 1fr 0.8fr 100px; }
+  .pt-head span:nth-child(1), .pt-head span:nth-child(3), .pt-head span:nth-child(6),
+  .pt-row .id, .pt-row .grp, .pt-row .rp{ display:none; }
+  .pc-head, .pc-row{ grid-template-columns:1fr 0.8fr 0.9fr 1.2fr; }
+  .pc-head span:nth-child(1), .pc-head span:nth-child(2), .pc-head span:nth-child(5), .pc-head span:nth-child(6),
+  .pc-row .id, .pc-row .tgl, .pc-row .poin, .pc-row .metode{ display:none; }
+}
+@media (max-width: 700px){
+  .sidebar{ position:fixed; left:-240px; z-index:20; transition:0.2s; }
+  .sidebar.open{ left:0; }
+  .stat-grid{ grid-template-columns:1fr 1fr; }
+  .view{ padding:22px 16px 50px; }
+  .topbar{ padding:16px 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="side-logo">
+      <img src="assets/logo/tandur.png" alt="Tandur">
+      <div>
+        <span class="tag mono">OPS · SUPPLY</span>
+      </div>
+    </div>
+    <nav class="side-nav">
+      <span class="eyebrow mono">Monitoring</span>
+      <a href="#dashboard" class="side-link active" data-view="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"></rect><rect x="14" y="3" width="7" height="5" rx="1"></rect><rect x="14" y="12" width="7" height="9" rx="1"></rect><rect x="3" y="16" width="7" height="5" rx="1"></rect></svg>
+        Dashboard
+      </a>
+      <a href="#riwayat" class="side-link" data-view="riwayat">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"></path><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"></path><path d="M12 7v5l4 2"></path></svg>
+        Riwayat Pengumpulan
+      </a>
+      <a href="#gudang" class="side-link" data-view="gudang">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"></path><path d="M5 8.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V8.5"></path></svg>
+        Limbah di Gudang
+      </a>
+      <span class="eyebrow mono">Poin &amp; Petani</span>
+      <a href="#petani" class="side-link" data-view="petani">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"></circle><path d="M5 20c1.2-3.6 4-5.4 7-5.4s5.8 1.8 7 5.4"></path></svg>
+        Poin Petani
+      </a>
+      <a href="#pencairan" class="side-link" data-view="pencairan">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 7l-5-5-5 5M7 17l5 5 5-5"></path></svg>
+        Pencairan Poin
+        <span class="nav-badge mono" id="navPencairanBadge" style="display:none;"></span>
+      </a>
+      <span class="eyebrow mono">Sistem</span>
+      <a href="#pengaturan" class="side-link" data-view="pengaturan">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.37a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.63 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.63 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.63a1.7 1.7 0 0 0 1.04-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.04 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.37 9a1.7 1.7 0 0 0 1.56 1.04H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.56 1.04Z"></path></svg>
+        Pengaturan Umum
+      </a>
+    </nav>
+    <div class="side-foot">
+      <div class="op"><span class="dot"></span> Terhubung · Live</div>
+      <div class="rev mono">MANIFEST NO. 00214-B · REV 3</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <h1 id="pageTitle">Dashboard</h1>
+        <div class="sub" id="pageSub">Ringkasan pengumpulan limbah lignoselulosa dari mitra petani</div>
+      </div>
+      <div class="topbar-right">
+        <div class="today mono" id="todayDate"></div>
+        <div class="avatar">A</div>
+      </div>
+    </header>
+
+    <!-- ============ DASHBOARD ============ -->
+    <section class="view active" id="view-dashboard">
+      <div class="stat-grid">
+        <div class="stat-card" style="--accent:var(--kraft)">
+          <div class="lbl">Total Terkumpul (Bulan Ini)</div>
+          <div class="val">4.820<small>kg</small></div>
+          <div class="trend up">▲ 12.4% dari bulan lalu</div>
+        </div>
+        <div class="stat-card" style="--accent:var(--cyan)">
+          <div class="lbl">Mitra Petani Aktif</div>
+          <div class="val">37</div>
+          <div class="trend up">▲ 3 mitra baru</div>
+        </div>
+        <div class="stat-card" style="--accent:var(--kraft-dark)">
+          <div class="lbl">Sudah Diproses</div>
+          <div class="val">3.960<small>kg</small></div>
+          <div class="trend" style="color:rgba(23,21,16,0.55)">82% dari total masuk</div>
+        </div>
+        <div class="stat-card" style="--accent:var(--magenta)">
+          <div class="lbl">Menunggu Verifikasi</div>
+          <div class="val">6<small>manifest</small></div>
+          <div class="trend down">▼ perlu ditinjau</div>
+        </div>
+      </div>
+
+      <div class="panel-row">
+        <div class="panel">
+          <h2 class="ph">Volume Pengumpulan Mingguan</h2>
+          <div class="ph-sub">7 hari terakhir, dalam kilogram</div>
+          <div class="bars" id="weeklyBars"></div>
+        </div>
+        <div class="panel">
+          <h2 class="ph">Komposisi Jenis Limbah</h2>
+          <div class="ph-sub">Proporsi dari total terkumpul bulan ini</div>
+          <div id="compList"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 class="ph">Pengumpulan Terbaru</h2>
+        <div class="ph-sub">5 entri terakhir yang masuk ke sistem</div>
+        <div class="recent-head">
+          <span>Mitra</span><span>Jenis Limbah</span><span>Lokasi</span><span class="w">Berat</span>
+        </div>
+        <div id="recentList"></div>
+      </div>
+    </section>
+
+    <!-- ============ RIWAYAT ============ -->
+    <section class="view" id="view-riwayat">
+      <div class="filter-bar">
+        <input type="text" class="search" id="fSearch" placeholder="Cari mitra atau lokasi…">
+        <select id="fJenis">
+          <option value="">Semua Jenis Limbah</option>
+        </select>
+        <select id="fStatus">
+          <option value="">Semua Status</option>
+          <option value="ok">Terverifikasi</option>
+          <option value="pending">Menunggu Verifikasi</option>
+          <option value="rejected">Ditolak</option>
+        </select>
+        <input type="date" id="fFrom">
+        <input type="date" id="fTo">
+        <span class="filter-count" id="fCount"></span>
+      </div>
+      <div class="manifest-table">
+        <div class="mt-head">
+          <span>Manifest</span><span>Tanggal</span><span>Mitra Petani</span><span>Jenis</span><span>Lokasi</span><span>Berat / Status</span>
+        </div>
+        <div id="manifestBody"></div>
+      </div>
+    </section>
+
+    <!-- ============ GUDANG ============ -->
+    <section class="view" id="view-gudang">
+      <div class="stat-grid">
+        <div class="stat-card" style="--accent:var(--kraft)">
+          <div class="lbl">Total Stok di Gudang</div>
+          <div class="val" id="gdTotalStock">–<small>kg</small></div>
+          <div class="trend" style="color:rgba(23,21,16,0.55)" id="gdTotalSub">dari seluruh gudang BUMDes</div>
+        </div>
+        <div class="stat-card" style="--accent:var(--cyan)">
+          <div class="lbl">Kapasitas Terpakai</div>
+          <div class="val" id="gdCapPct">–<small>%</small></div>
+          <div class="trend" style="color:rgba(23,21,16,0.55)" id="gdCapSub">rata-rata seluruh gudang</div>
+        </div>
+        <div class="stat-card" style="--accent:var(--kraft-dark)">
+          <div class="lbl">Gudang Aktif</div>
+          <div class="val" id="gdActiveCount">–</div>
+          <div class="trend" style="color:rgba(23,21,16,0.55)">menyimpan limbah saat ini</div>
+        </div>
+        <div class="stat-card" style="--accent:var(--magenta)">
+          <div class="lbl">Jenis Limbah Tersimpan</div>
+          <div class="val" id="gdTypeCount">–</div>
+          <div class="trend" style="color:rgba(23,21,16,0.55)">jenis berbeda di gudang</div>
+        </div>
+      </div>
+
+      <div class="panel-row">
+        <div class="panel">
+          <h2 class="ph">Kapasitas per Gudang</h2>
+          <div class="ph-sub">Jumlah terisi dibanding kapasitas maksimum tiap gudang BUMDes</div>
+          <div class="cap-list" id="capList"></div>
+        </div>
+        <div class="panel">
+          <h2 class="ph">Stok per Jenis Limbah</h2>
+          <div class="ph-sub">Total tersimpan di seluruh gudang, per jenis</div>
+          <div id="gdCompList"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 class="ph" style="margin-bottom:16px;">Rincian Stok Gudang</h2>
+        <div class="gd-table">
+          <div class="gd-head">
+            <span>Gudang</span><span>Lokasi</span><span>Jenis Limbah</span><span class="w">Stok</span><span>Diperbarui</span><span>Status</span>
+          </div>
+          <div id="gdBody"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ POIN PETANI ============ -->
+    <section class="view" id="view-petani">
+      <div class="stat-grid">
+        <div class="stat-card" style="--accent:var(--kraft)">
+          <div class="lbl">Petani Terdaftar</div>
+          <div class="val" id="ptTotalCount">–</div>
+          <div class="trend" style="color:rgba(23,21,16,0.55)" id="ptTotalSub">di seluruh kelompok tani</div>
+        </div>
+        <div class="stat-card" style="--accent:var(--cyan)">
+          <div class="lbl">Poin Beredar</div>
+          <div class="val" id="ptTotalPoin">–</div>
+          <div class="trend" style="color:rgba(23,21,16,0.55)" id="ptTotalPoinRp">≈ Rp –</div>
+        </div>
+        <div class="stat-card" style="--accent:var(--kraft-dark)">
+          <div class="lbl">Kelompok Tani Aktif</div>
+          <div class="val" id="ptGroupCount">–</div>
+          <div class="trend" style="color:rgba(23,21,16,0.55)">menyetor limbah bulan ini</div>
+        </div>
+        <div class="stat-card" style="--accent:var(--magenta)">
+          <div class="lbl">Pencairan Menunggu</div>
+          <div class="val" id="ptPendingCount">–</div>
+          <div class="trend down">perlu ditinjau</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head-row">
+          <div>
+            <h2 class="ph">Daftar Petani &amp; Saldo Poin</h2>
+            <div class="ph-sub">Poin didapat dari limbah yang disetor ke kelompok tani, bisa dicairkan ke uang</div>
+          </div>
+          <button class="btn-panel-action" id="btnOpenSetoran">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>
+            Input Setoran
+          </button>
+        </div>
+        <div class="filter-bar">
+          <input type="text" class="search" id="ptSearch" placeholder="Cari nama atau nomor anggota…">
+          <select id="ptGroupFilter"><option value="">Semua Kelompok Tani</option></select>
+          <span class="filter-count" id="ptCount"></span>
+        </div>
+        <div class="pt-table">
+          <div class="pt-head">
+            <span>No. Anggota</span><span>Nama Petani</span><span>Kelompok Tani</span><span>Saldo Poin</span><span>≈ Rupiah</span><span>Total Setoran</span><span>Aksi</span>
+          </div>
+          <div id="ptBody"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PENCAIRAN POIN ============ -->
+    <section class="view" id="view-pencairan">
+      <div class="stat-grid">
+        <div class="stat-card" style="--accent:var(--magenta)">
+          <div class="lbl">Menunggu Approval</div>
+          <div class="val" id="pcPendingCount">–</div>
+          <div class="trend down">perlu ditinjau</div>
+        </div>
+        <div class="stat-card" style="--accent:var(--cyan)">
+          <div class="lbl">Sedang Diproses</div>
+          <div class="val" id="pcProcessCount">–</div>
+          <div class="trend" style="color:rgba(23,21,16,0.55)">menunggu transfer</div>
+        </div>
+        <div class="stat-card" style="--accent:var(--kraft)">
+          <div class="lbl">Selesai (Bulan Ini)</div>
+          <div class="val" id="pcDoneCount">–</div>
+          <div class="trend up" id="pcDoneSub">–</div>
+        </div>
+        <div class="stat-card" style="--accent:var(--kraft-dark)">
+          <div class="lbl">Total Dicairkan (Bulan Ini)</div>
+          <div class="val mono" id="pcDoneRp" style="font-size:22px;">–</div>
+          <div class="trend" style="color:rgba(23,21,16,0.55)">ke rekening / tunai petani</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 class="ph">Pengajuan Pencairan Poin</h2>
+        <div class="ph-sub">Poin yang diajukan petani untuk dicairkan lewat portal mereka</div>
+        <div class="filter-bar">
+          <input type="text" class="search" id="pcSearch" placeholder="Cari nama petani…">
+          <select id="pcStatusFilter">
+            <option value="">Semua Status</option>
+            <option value="diajukan">Diajukan</option>
+            <option value="diproses">Diproses</option>
+            <option value="selesai">Selesai</option>
+            <option value="ditolak">Ditolak</option>
+          </select>
+          <span class="filter-count" id="pcCount"></span>
+        </div>
+        <div class="pc-table">
+          <div class="pc-head">
+            <span>No. Pengajuan</span><span class="tgl">Tanggal</span><span>Petani</span><span>Kelompok Tani</span><span class="poin">Poin</span><span class="rp">Nilai</span><span class="metode">Metode</span><span>Status</span><span>Aksi</span>
+          </div>
+          <div id="pcBody"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PENGATURAN ============ -->
+    <section class="view" id="view-pengaturan">
+      <div class="settings-grid">
+        <div class="panel">
+          <h2 class="ph">Informasi Platform</h2>
+          <div class="ph-sub">Identitas yang tampil pada manifest dan notifikasi</div>
+          <div class="field">
+            <label>Nama Operasional</label>
+            <input type="text" value="Tandur — Unit Pengumpulan Limbah">
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Email Admin</label>
+              <input type="email" value="ops@tandur.id">
+            </div>
+            <div class="field">
+              <label>Telepon Admin</label>
+              <input type="text" value="0800-1-56-2825">
+            </div>
+          </div>
+          <div class="field">
+            <label>Zona Waktu</label>
+            <select>
+              <option>WIB (UTC+7)</option>
+              <option>WITA (UTC+8)</option>
+              <option>WIT (UTC+9)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2 class="ph">Target &amp; Ambang Batas</h2>
+          <div class="ph-sub">Digunakan untuk indikator tren di dashboard</div>
+          <div class="field-row">
+            <div class="field">
+              <label>Target Pengumpulan Bulanan</label>
+              <input type="number" value="5000">
+              <span class="hint">Dalam kilogram (kg)</span>
+            </div>
+            <div class="field">
+              <label>Satuan Default</label>
+              <select><option>Kilogram (kg)</option><option>Ton</option></select>
+            </div>
+          </div>
+          <div class="field">
+            <label>Radius Jangkauan Mitra</label>
+            <input type="number" value="60">
+            <span class="hint">Jarak maksimum dari titik pengumpulan, dalam km</span>
+          </div>
+          <div class="field">
+            <label>Ambang Batas Notifikasi Stok Rendah</label>
+            <input type="number" value="800">
+            <span class="hint">Kirim peringatan bila stok terproses di bawah nilai ini (kg)</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2 class="ph">Notifikasi</h2>
+          <div class="ph-sub">Atur kapan tim ops menerima pemberitahuan</div>
+          <div class="toggle-row">
+            <div><div class="tt">Ringkasan Harian</div><div class="td">Kirim rekap pengumpulan tiap pukul 18.00 WIB</div></div>
+            <label class="switch"><input type="checkbox" checked><span class="track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="tt">Manifest Menunggu Verifikasi</div><div class="td">Ping saat ada manifest baru masuk antrean</div></div>
+            <label class="switch"><input type="checkbox" checked><span class="track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="tt">Peringatan Stok Rendah</div><div class="td">Beri tahu saat stok terproses di bawah ambang batas</div></div>
+            <label class="switch"><input type="checkbox"><span class="track"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><div class="tt">Mitra Baru Terdaftar</div><div class="td">Notifikasi saat mitra petani baru bergabung</div></div>
+            <label class="switch"><input type="checkbox" checked><span class="track"></span></label>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2 class="ph">Rate Konversi Poin</h2>
+          <div class="ph-sub">Berapa poin didapat petani per kg limbah, dan nilai tukar poin ke rupiah</div>
+          <div class="field">
+            <label>Nilai Tukar</label>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="mono" style="font-size:13px;">1 poin =</span>
+              <input type="number" id="rateRupiahInput" value="500" style="max-width:120px;">
+              <span class="mono" style="font-size:13px;">rupiah</span>
+            </div>
+            <span class="hint">Berlaku untuk semua pengajuan pencairan baru</span>
+          </div>
+          <div class="field">
+            <label>Poin per Kg — per Jenis Limbah</label>
+            <div id="rateTypeList" style="display:flex; flex-direction:column; gap:8px; margin-top:4px;"></div>
+          </div>
+          <div class="field">
+            <label>Minimum Pencairan</label>
+            <input type="number" id="rateMinInput" value="100">
+            <span class="hint">Poin minimum yang bisa diajukan petani sekali cair</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2 class="ph">Akses &amp; Peran</h2>
+          <div class="ph-sub">Siapa yang dapat memverifikasi manifest pengumpulan</div>
+          <div class="field">
+            <label>Peran Default Anggota Baru</label>
+            <select>
+              <option>Peninjau (lihat &amp; verifikasi)</option>
+              <option>Operator Lapangan (input manifest)</option>
+              <option>Admin Penuh</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Wajib Verifikasi Ganda</label>
+            <select>
+              <option>Tidak — cukup satu peninjau</option>
+              <option>Ya — untuk manifest di atas 200 kg</option>
+            </select>
+            <span class="hint">Manifest besar memerlukan persetujuan dari dua peninjau berbeda</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="save-bar">
+        <button class="btn-save" id="btnSave">Simpan Pengaturan</button>
+        <span class="save-msg mono" id="saveMsg">✓ Pengaturan tersimpan</span>
+      </div>
+    </section>
+  </main>
+</div>
+
+<button class="fab-pickup" id="fabPickup" aria-label="Jadwalkan Pickup">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4"></path><path d="M8 3v4"></path><path d="M3 10h18"></path><path d="m9 15 2 2 4-4"></path></svg>
+  <span>Jadwalkan Pickup</span>
+</button>
+
+<div class="modal-backdrop" id="pickupBackdrop">
+  <div class="modal">
+    <h3>Jadwalkan Pickup Limbah</h3>
+    <div class="modal-sub">Atur pengambilan limbah dari mitra petani ke gudang BUMDes.</div>
+    <div class="field">
+      <label>Mitra / Lokasi</label>
+      <select id="pkPartner">
+        <option value="">Pilih mitra petani…</option>
+      </select>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Jenis Limbah</label>
+        <select id="pkType">
+          <option value="">Pilih jenis…</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Estimasi Berat</label>
+        <input type="number" id="pkWeight" placeholder="mis. 150" min="0">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Tanggal Pickup</label>
+        <input type="date" id="pkDate">
+      </div>
+      <div class="field">
+        <label>Gudang Tujuan</label>
+        <select id="pkWarehouse">
+          <option value="">Pilih gudang…</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Catatan (opsional)</label>
+      <input type="text" id="pkNote" placeholder="mis. akses jalan, jam pengambilan…">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="pkCancel">Batal</button>
+      <button class="btn-save" id="pkSubmit">Jadwalkan Pickup</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="setoranBackdrop">
+  <div class="modal">
+    <h3>Input Setoran Petani</h3>
+    <div class="modal-sub">Catat limbah yang disetor petani ke titik kumpul kelompok tani — poin masuk otomatis ke saldonya.</div>
+    <div class="field">
+      <label>Kelompok Tani</label>
+      <select id="stGroup">
+        <option value="">Pilih kelompok tani…</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Petani</label>
+      <select id="stPetani" disabled>
+        <option value="">Pilih kelompok tani dulu…</option>
+      </select>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Jenis Limbah</label>
+        <select id="stType">
+          <option value="">Pilih jenis…</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Berat (kg)</label>
+        <input type="number" id="stWeight" placeholder="mis. 85" min="0">
+      </div>
+    </div>
+    <div class="modal-avail" style="background:var(--paper-2); border-radius:4px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+      <span style="font-size:12px; color:rgba(23,21,16,0.55); font-weight:600;">Poin yang didapat</span>
+      <span class="mono" id="stPoinPreview" style="font-size:15px; font-weight:800; color:var(--kraft-dark);">0 poin</span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="stCancel">Batal</button>
+      <button class="btn-save" id="stSubmit">Simpan Setoran</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="appToast"></div>
+
+<script>
+/* ============================================================
+   Data lapisan — sumber sementara (mock). Ganti fungsi-fungsi
+   di bawah ini dengan query Supabase saat backend tersambung,
+   mis. supabase.from('waste_collections').select('*')
+   ============================================================ */
+const WASTE_TYPES = [
+  { key:'jerami',  label:'Jerami Padi',   color:'var(--kraft)',      poinRate:4 },
+  { key:'sekam',   label:'Sekam Padi',    color:'var(--cyan)',       poinRate:3 },
+  { key:'bagas',   label:'Ampas Tebu',    color:'var(--kraft-dark)', poinRate:5 },
+  { key:'tongkol', label:'Tongkol Jagung',color:'var(--yellow)',     poinRate:3 },
+  { key:'pisang',  label:'Batang Pisang', color:'var(--magenta)',    poinRate:2 },
+];
+let RATE_RUPIAH_PER_POIN = 500;
+let MIN_PENCAIRAN_POIN = 100;
+
+const LOCATIONS = ['Lamongan','Bojonegoro','Ngawi','Jombang','Mojokerto','Sidoarjo','Nganjuk'];
+const PARTNERS = ['Kelompok Tani Sumber Makmur','Koperasi Tani Subur Jaya','Kelompok Tani Rukun Tani','Gapoktan Sido Mulyo','Kelompok Tani Karya Bakti','Koperasi Petani Mandiri','Kelompok Tani Sri Rejeki','Gapoktan Tani Maju'];
+
+function seededRandom(seed){ let s = seed; return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; }; }
+const rnd = seededRandom(42);
+
+function generateManifests(n){
+  const rows = [];
+  const today = new Date('2026-08-04');
+  for(let i=0;i<n;i++){
+    const daysAgo = Math.floor(rnd()*45);
+    const d = new Date(today); d.setDate(d.getDate()-daysAgo);
+    const type = WASTE_TYPES[Math.floor(rnd()*WASTE_TYPES.length)];
+    const statusRoll = rnd();
+    const status = statusRoll > 0.88 ? 'rejected' : statusRoll > 0.72 ? 'pending' : 'ok';
+    rows.push({
+      id: 'MF-' + String(2600 + i).padStart(4,'0'),
+      date: d.toISOString().slice(0,10),
+      partner: PARTNERS[Math.floor(rnd()*PARTNERS.length)],
+      typeKey: type.key,
+      typeLabel: type.label,
+      color: type.color,
+      location: LOCATIONS[Math.floor(rnd()*LOCATIONS.length)],
+      weight: Math.round(40 + rnd()*260),
+      status
+    });
+  }
+  return rows.sort((a,b)=> b.date.localeCompare(a.date));
+}
+
+const MANIFESTS = generateManifests(48);
+
+/* ---------- gudang: stok limbah tersimpan (mock) ---------- */
+const WAREHOUSES = LOCATIONS.map((loc, i) => ({
+  id: 'GD-' + String(i + 1).padStart(2, '0'),
+  name: 'Gudang BUMDes ' + loc,
+  location: loc,
+  capacity: 2200 + Math.floor(rnd() * 3800)
+}));
+
+function generateWarehouseStock(){
+  const rows = [];
+  const today = new Date('2026-08-04');
+  WAREHOUSES.forEach(w => {
+    WASTE_TYPES.forEach(t => {
+      if(rnd() > 0.38){
+        const daysAgo = Math.floor(rnd() * 12);
+        const d = new Date(today); d.setDate(d.getDate() - daysAgo);
+        rows.push({
+          warehouseId: w.id,
+          warehouse: w.name,
+          location: w.location,
+          typeKey: t.key,
+          typeLabel: t.label,
+          color: t.color,
+          stock: Math.round(70 + rnd() * 420),
+          updated: d.toISOString().slice(0, 10)
+        });
+      }
+    });
+  });
+  return rows;
+}
+const WAREHOUSE_STOCK = generateWarehouseStock();
+
+function warehouseTotals(){
+  const map = {};
+  WAREHOUSES.forEach(w => { map[w.id] = { ...w, stock: 0 }; });
+  WAREHOUSE_STOCK.forEach(r => { map[r.warehouseId].stock += r.stock; });
+  return Object.values(map);
+}
+
+/* ---------- petani & poin (mock) ---------- */
+const FIRST_NAMES = ['Slamet','Wagiyo','Suyanto','Marni','Kasiyem','Ahmad','Sutrisno','Painem','Ngatiyo','Rusdi','Sarinah','Bambang','Tukiyem','Wardoyo','Yatimah','Sukarno','Rohana','Paidi','Mulyono','Sriyati','Tarno','Wiji','Sudarmi','Gunawan'];
+const LAST_NAMES = ['Riyadi','Santoso','Wibowo','Hartono','Saputra','Utomo','Nugroho','Kusuma','Prasetyo','Widodo'];
+
+function generatePetani(){
+  const rows = [];
+  let seq = 1;
+  PARTNERS.forEach((partner) => {
+    const n = 3 + Math.floor(rnd() * 4); // 3-6 petani per kelompok
+    for(let i=0;i<n;i++){
+      const nama = FIRST_NAMES[Math.floor(rnd()*FIRST_NAMES.length)] + ' ' + LAST_NAMES[Math.floor(rnd()*LAST_NAMES.length)];
+      const totalKg = Math.round(80 + rnd()*600);
+      const poin = Math.round(totalKg * (2.5 + rnd()*2));
+      rows.push({
+        id: 'PT-' + String(400 + seq).padStart(4,'0'),
+        nama,
+        partner,
+        hp: '812-' + Math.floor(1000+rnd()*8999) + '-' + Math.floor(1000+rnd()*8999),
+        poin,
+        totalKg,
+      });
+      seq++;
+    }
+  });
+  return rows;
+}
+const PETANI = generatePetani();
+
+function generatePencairan(){
+  const rows = [];
+  const today = new Date('2026-08-04');
+  const statuses = ['diajukan','diajukan','diproses','selesai','selesai','ditolak'];
+  const methods = ['Transfer Bank','E-Wallet','Tunai di BUMDes'];
+  for(let i=0;i<14;i++){
+    const p = PETANI[Math.floor(rnd()*PETANI.length)];
+    const daysAgo = Math.floor(rnd()*28);
+    const d = new Date(today); d.setDate(d.getDate()-daysAgo);
+    const poin = Math.round((1 + Math.floor(rnd()*5)) * 100);
+    const status = statuses[Math.floor(rnd()*statuses.length)];
+    rows.push({
+      id: 'PC-' + String(1040 + i).padStart(4,'0'),
+      date: d.toISOString().slice(0,10),
+      petaniId: p.id,
+      nama: p.nama,
+      partner: p.partner,
+      poin,
+      metode: methods[Math.floor(rnd()*methods.length)],
+      status
+    });
+  }
+  return rows.sort((a,b)=> b.date.localeCompare(a.date));
+}
+const PENCAIRAN = generatePencairan();
+
+/* ---------- topbar date ---------- */
+document.getElementById('todayDate').textContent = new Intl.DateTimeFormat('id-ID',{ weekday:'long', day:'2-digit', month:'long', year:'numeric' }).format(new Date('2026-08-04'));
+
+/* ---------- nav switching ---------- */
+const views = { dashboard: 'Dashboard', riwayat: 'Riwayat Pengumpulan Limbah', gudang: 'Limbah di Gudang', petani: 'Poin Petani', pencairan: 'Pencairan Poin', pengaturan: 'Pengaturan Umum' };
+const subs = {
+  dashboard: 'Ringkasan pengumpulan limbah lignoselulosa dari mitra petani',
+  riwayat: 'Semua manifest pengumpulan yang tercatat di sistem',
+  gudang: 'Stok limbah yang tersimpan di gudang BUMDes, per jenis',
+  petani: 'Saldo poin tiap petani dari limbah yang mereka setorkan',
+  pencairan: 'Tinjau dan proses permintaan tukar poin ke uang dari petani',
+  pengaturan: 'Konfigurasi platform, target, dan notifikasi tim ops'
+};
+document.querySelectorAll('.side-link').forEach(link=>{
+  link.addEventListener('click', (e)=>{
+    e.preventDefault();
+    const v = link.dataset.view;
+    document.querySelectorAll('.side-link').forEach(l=>l.classList.remove('active'));
+    link.classList.add('active');
+    document.querySelectorAll('.view').forEach(s=>s.classList.remove('active'));
+    document.getElementById('view-'+v).classList.add('active');
+    document.getElementById('pageTitle').textContent = views[v];
+    document.getElementById('pageSub').textContent = subs[v];
+    history.replaceState(null,'','#'+v);
+  });
+});
+(function initFromHash(){
+  const v = location.hash.replace('#','');
+  if(views[v]){ document.querySelector('[data-view="'+v+'"]').click(); }
+})();
+
+/* ---------- dashboard: weekly bars ---------- */
+const weekly = [
+  {day:'Sen', val:640}, {day:'Sel', val:580}, {day:'Rab', val:720},
+  {day:'Kam', val:510}, {day:'Jum', val:810}, {day:'Sab', val:390}, {day:'Min', val:260}
+];
+const maxVal = Math.max(...weekly.map(w=>w.val));
+document.getElementById('weeklyBars').innerHTML = weekly.map(w => `
+  <div class="bar-col">
+    <span class="val">${w.val}</span>
+    <div class="bar" style="height:${Math.round((w.val/maxVal)*100)}%;"></div>
+    <span class="day">${w.day}</span>
+  </div>
+`).join('');
+
+/* ---------- dashboard: composition ---------- */
+const compTotals = {};
+MANIFESTS.forEach(m => { compTotals[m.typeKey] = (compTotals[m.typeKey]||0) + m.weight; });
+const compTotalSum = Object.values(compTotals).reduce((a,b)=>a+b,0);
+document.getElementById('compList').innerHTML = WASTE_TYPES.map(t => {
+  const pct = compTotalSum ? Math.round(((compTotals[t.key]||0)/compTotalSum)*100) : 0;
+  return `<div class="comp-item">
+    <span class="comp-key"><span class="comp-dot" style="background:${t.color}"></span>${t.label}</span>
+    <span class="pct">${pct}%</span>
+  </div>`;
+}).join('');
+
+/* ---------- dashboard: recent list ---------- */
+document.getElementById('recentList').innerHTML = MANIFESTS.slice(0,5).map(m => `
+  <div class="recent-row">
+    <span>${m.partner}</span>
+    <span>${m.typeLabel}</span>
+    <span>${m.location}</span>
+    <span class="w">${m.weight} kg</span>
+  </div>
+`).join('');
+
+/* ---------- gudang: render ---------- */
+function statusForPct(pct){
+  if(pct >= 90) return { key:'penuh', label:'Penuh' };
+  if(pct >= 65) return { key:'hampir-penuh', label:'Hampir Penuh' };
+  return { key:'tersedia', label:'Tersedia' };
+}
+
+(function renderGudang(){
+  const totals = warehouseTotals();
+  const totalStock = totals.reduce((a,w)=> a + w.stock, 0);
+  const totalCapacity = totals.reduce((a,w)=> a + w.capacity, 0);
+  const capPct = totalCapacity ? Math.round((totalStock / totalCapacity) * 100) : 0;
+  const activeCount = totals.filter(w => w.stock > 0).length;
+  const typeCount = new Set(WAREHOUSE_STOCK.map(r => r.typeKey)).size;
+
+  document.getElementById('gdTotalStock').innerHTML = totalStock.toLocaleString('id-ID') + '<small>kg</small>';
+  document.getElementById('gdCapPct').innerHTML = capPct + '<small>%</small>';
+  document.getElementById('gdActiveCount').textContent = activeCount;
+  document.getElementById('gdTypeCount').textContent = typeCount;
+  document.getElementById('gdTotalSub').textContent = 'dari ' + totals.length + ' gudang BUMDes';
+
+  /* kapasitas per gudang */
+  document.getElementById('capList').innerHTML = totals
+    .sort((a,b)=> (b.stock/b.capacity) - (a.stock/a.capacity))
+    .map(w => {
+      const pct = Math.min(100, Math.round((w.stock / w.capacity) * 100));
+      const barClass = pct >= 90 ? 'full' : pct >= 65 ? 'warn' : '';
+      return `<div class="cap-item">
+        <div class="cap-top">
+          <div>
+            <div class="cap-name">${w.name}</div>
+            <div class="cap-loc">${w.location}</div>
+          </div>
+          <div class="cap-figure">${w.stock.toLocaleString('id-ID')} / ${w.capacity.toLocaleString('id-ID')} kg · ${pct}%</div>
+        </div>
+        <div class="cap-bar-track"><div class="cap-bar-fill ${barClass}" style="width:${pct}%"></div></div>
+      </div>`;
+    }).join('');
+
+  /* stok per jenis limbah */
+  const typeTotals = {};
+  WAREHOUSE_STOCK.forEach(r => { typeTotals[r.typeKey] = (typeTotals[r.typeKey] || 0) + r.stock; });
+  document.getElementById('gdCompList').innerHTML = WASTE_TYPES.map(t => {
+    const kg = typeTotals[t.key] || 0;
+    return `<div class="comp-item">
+      <span class="comp-key"><span class="comp-dot" style="background:${t.color}"></span>${t.label}</span>
+      <span class="pct">${kg.toLocaleString('id-ID')} kg</span>
+    </div>`;
+  }).join('');
+
+  /* rincian tabel */
+  const capByWarehouse = {};
+  totals.forEach(w => { capByWarehouse[w.id] = w; });
+  document.getElementById('gdBody').innerHTML = WAREHOUSE_STOCK
+    .slice()
+    .sort((a,b)=> a.warehouse.localeCompare(b.warehouse) || b.stock - a.stock)
+    .map(r => {
+      const w = capByWarehouse[r.warehouseId];
+      const pct = Math.min(100, Math.round((w.stock / w.capacity) * 100));
+      const st = statusForPct(pct);
+      return `<div class="gd-row" style="--tag-color:${r.color}">
+        <span>${r.warehouse}</span>
+        <span class="gd-loc">${r.location}</span>
+        <span class="gd-type-key"><span class="dot"></span>${r.typeLabel}</span>
+        <span class="w">${r.stock.toLocaleString('id-ID')} kg</span>
+        <span class="gd-updated">${new Intl.DateTimeFormat('id-ID',{day:'2-digit',month:'short',year:'numeric'}).format(new Date(r.updated))}</span>
+        <span class="gd-status"><span class="status-pill ${st.key}">${st.label}</span></span>
+      </div>`;
+    }).join('');
+})();
+
+/* ---------- riwayat: filter setup ---------- */
+const fJenis = document.getElementById('fJenis');
+WASTE_TYPES.forEach(t => {
+  const opt = document.createElement('option');
+  opt.value = t.key; opt.textContent = t.label;
+  fJenis.appendChild(opt);
+});
+
+const STATUS_LABEL = { ok:'Terverifikasi', pending:'Menunggu Verifikasi', rejected:'Ditolak' };
+
+function renderManifests(){
+  const q = document.getElementById('fSearch').value.trim().toLowerCase();
+  const jenis = fJenis.value;
+  const status = document.getElementById('fStatus').value;
+  const from = document.getElementById('fFrom').value;
+  const to = document.getElementById('fTo').value;
+
+  const filtered = MANIFESTS.filter(m => {
+    if(q && !(m.partner.toLowerCase().includes(q) || m.location.toLowerCase().includes(q))) return false;
+    if(jenis && m.typeKey !== jenis) return false;
+    if(status && m.status !== status) return false;
+    if(from && m.date < from) return false;
+    if(to && m.date > to) return false;
+    return true;
+  });
+
+  document.getElementById('fCount').textContent = filtered.length + ' dari ' + MANIFESTS.length + ' manifest';
+
+  const body = document.getElementById('manifestBody');
+  if(filtered.length === 0){
+    body.innerHTML = '<div class="mt-empty">Tidak ada manifest yang cocok dengan filter ini.</div>';
+    return;
+  }
+  body.innerHTML = filtered.map(m => `
+    <div class="mt-row" style="--tag-color:${m.color}">
+      <span class="id">${m.id}</span>
+      <span>${new Intl.DateTimeFormat('id-ID',{day:'2-digit',month:'short',year:'numeric'}).format(new Date(m.date))}</span>
+      <span>${m.partner}</span>
+      <span>${m.typeLabel}</span>
+      <span class="loc">${m.location}</span>
+      <span>
+        <span class="w">${m.weight} kg</span><br>
+        <span class="status-pill ${m.status}">${STATUS_LABEL[m.status]}</span>
+      </span>
+    </div>
+  `).join('');
+}
+['fSearch','fJenis','fStatus','fFrom','fTo'].forEach(id => {
+  document.getElementById(id).addEventListener('input', renderManifests);
+});
+renderManifests();
+
+/* ---------- poin petani: render ---------- */
+function fmtRp(n){ return 'Rp ' + Math.round(n).toLocaleString('id-ID'); }
+
+const ptGroupFilter = document.getElementById('ptGroupFilter');
+PARTNERS.forEach(p => {
+  const opt = document.createElement('option');
+  opt.value = p; opt.textContent = p;
+  ptGroupFilter.appendChild(opt);
+});
+
+function updateNavBadge(){
+  const pending = PENCAIRAN.filter(p => p.status === 'diajukan').length;
+  const badge = document.getElementById('navPencairanBadge');
+  if(pending > 0){ badge.style.display = 'inline-block'; badge.textContent = pending; }
+  else{ badge.style.display = 'none'; }
+}
+
+function renderPetaniStats(){
+  document.getElementById('ptTotalCount').textContent = PETANI.length;
+  document.getElementById('ptTotalSub').textContent = 'di ' + PARTNERS.length + ' kelompok tani';
+  const totalPoin = PETANI.reduce((a,p)=> a + p.poin, 0);
+  document.getElementById('ptTotalPoin').textContent = totalPoin.toLocaleString('id-ID');
+  document.getElementById('ptTotalPoinRp').textContent = '≈ ' + fmtRp(totalPoin * RATE_RUPIAH_PER_POIN);
+  document.getElementById('ptGroupCount').textContent = PARTNERS.length;
+  document.getElementById('ptPendingCount').textContent = PENCAIRAN.filter(p=>p.status==='diajukan').length;
+}
+
+function renderPetaniTable(){
+  const q = document.getElementById('ptSearch').value.trim().toLowerCase();
+  const grp = ptGroupFilter.value;
+  const filtered = PETANI.filter(p => {
+    if(q && !(p.nama.toLowerCase().includes(q) || p.id.toLowerCase().includes(q))) return false;
+    if(grp && p.partner !== grp) return false;
+    return true;
+  });
+  document.getElementById('ptCount').textContent = filtered.length + ' dari ' + PETANI.length + ' petani';
+  const body = document.getElementById('ptBody');
+  if(filtered.length === 0){
+    body.innerHTML = '<div class="mt-empty">Tidak ada petani yang cocok dengan pencarian ini.</div>';
+    return;
+  }
+  body.innerHTML = filtered.slice().sort((a,b)=> b.poin - a.poin).map(p => `
+    <div class="pt-row">
+      <span class="id">${p.id}</span>
+      <span>${p.nama}</span>
+      <span class="grp">${p.partner}</span>
+      <span class="poin">${p.poin.toLocaleString('id-ID')}</span>
+      <span class="rp">${fmtRp(p.poin * RATE_RUPIAH_PER_POIN)}</span>
+      <span class="rp">${p.totalKg.toLocaleString('id-ID')} kg</span>
+      <span><button class="btn-row-action" data-open-setoran="${p.id}">+ Setoran</button></span>
+    </div>
+  `).join('');
+  body.querySelectorAll('[data-open-setoran]').forEach(btn=>{
+    btn.addEventListener('click', ()=> openSetoranModal(btn.dataset.openSetoran));
+  });
+}
+
+function renderPetani(){ renderPetaniStats(); renderPetaniTable(); updateNavBadge(); }
+['ptSearch'].forEach(id => document.getElementById(id).addEventListener('input', renderPetaniTable));
+ptGroupFilter.addEventListener('change', renderPetaniTable);
+
+/* ---------- pencairan: render ---------- */
+function renderPencairanStats(){
+  const pending = PENCAIRAN.filter(p=>p.status==='diajukan').length;
+  const process = PENCAIRAN.filter(p=>p.status==='diproses').length;
+  const done = PENCAIRAN.filter(p=>p.status==='selesai');
+  document.getElementById('pcPendingCount').textContent = pending;
+  document.getElementById('pcProcessCount').textContent = process;
+  document.getElementById('pcDoneCount').textContent = done.length;
+  document.getElementById('pcDoneSub').textContent = done.length + ' pengajuan tuntas';
+  const doneRp = done.reduce((a,p)=> a + p.poin * RATE_RUPIAH_PER_POIN, 0);
+  document.getElementById('pcDoneRp').textContent = fmtRp(doneRp);
+}
+
+function renderPencairanTable(){
+  const q = document.getElementById('pcSearch').value.trim().toLowerCase();
+  const status = document.getElementById('pcStatusFilter').value;
+  const filtered = PENCAIRAN.filter(p => {
+    if(q && !p.nama.toLowerCase().includes(q)) return false;
+    if(status && p.status !== status) return false;
+    return true;
+  });
+  document.getElementById('pcCount').textContent = filtered.length + ' dari ' + PENCAIRAN.length + ' pengajuan';
+  const body = document.getElementById('pcBody');
+  if(filtered.length === 0){
+    body.innerHTML = '<div class="mt-empty">Tidak ada pengajuan yang cocok dengan filter ini.</div>';
+    return;
+  }
+  const STATUS_LABEL_PC = { diajukan:'Diajukan', diproses:'Diproses', selesai:'Selesai', ditolak:'Ditolak' };
+  body.innerHTML = filtered.map(p => {
+    let actions = '';
+    if(p.status === 'diajukan'){
+      actions = `<button class="btn-approve" data-approve="${p.id}">Approve</button><button class="btn-reject" data-reject="${p.id}">Tolak</button>`;
+    } else if(p.status === 'diproses'){
+      actions = `<button class="btn-done" data-done="${p.id}">Tandai Selesai</button>`;
+    } else {
+      actions = '<span style="color:rgba(23,21,16,0.4); font-size:11.5px;">—</span>';
+    }
+    return `<div class="pc-row">
+      <span class="id">${p.id}</span>
+      <span class="tgl">${new Intl.DateTimeFormat('id-ID',{day:'2-digit',month:'short'}).format(new Date(p.date))}</span>
+      <span>${p.nama}</span>
+      <span class="grp">${p.partner}</span>
+      <span class="poin">${p.poin.toLocaleString('id-ID')}</span>
+      <span class="rp">${fmtRp(p.poin * RATE_RUPIAH_PER_POIN)}</span>
+      <span class="metode">${p.metode}</span>
+      <span><span class="status-pill ${p.status}">${STATUS_LABEL_PC[p.status]}</span></span>
+      <span class="pc-actions">${actions}</span>
+    </div>`;
+  }).join('');
+
+  body.querySelectorAll('[data-approve]').forEach(btn=> btn.addEventListener('click', ()=> setPencairanStatus(btn.dataset.approve,'diproses','Pengajuan disetujui, menunggu transfer.')));
+  body.querySelectorAll('[data-reject]').forEach(btn=> btn.addEventListener('click', ()=> setPencairanStatus(btn.dataset.reject,'ditolak','Pengajuan ditolak, poin dikembalikan ke saldo petani.', true)));
+  body.querySelectorAll('[data-done]').forEach(btn=> btn.addEventListener('click', ()=> setPencairanStatus(btn.dataset.done,'selesai','Pencairan ditandai selesai.')));
+}
+
+function setPencairanStatus(id, status, toastMsg, refund){
+  const row = PENCAIRAN.find(p => p.id === id);
+  if(!row) return;
+  row.status = status;
+  if(refund){
+    const p = PETANI.find(x => x.id === row.petaniId);
+    if(p) p.poin += row.poin;
+  }
+  renderPencairan();
+  renderPetani();
+  showToast(toastMsg);
+}
+
+function renderPencairan(){ renderPencairanStats(); renderPencairanTable(); updateNavBadge(); }
+document.getElementById('pcSearch').addEventListener('input', renderPencairanTable);
+document.getElementById('pcStatusFilter').addEventListener('change', renderPencairanTable);
+
+/* ---------- rate konversi poin (pengaturan) ---------- */
+function renderRateList(){
+  document.getElementById('rateTypeList').innerHTML = WASTE_TYPES.map(t => `
+    <div class="rate-type-row">
+      <span class="rt-key"><span class="rt-dot" style="background:${t.color}"></span>${t.label}</span>
+      <span style="display:flex; align-items:center; gap:6px;">
+        <input type="number" min="0" value="${t.poinRate}" data-rate-key="${t.key}">
+        <span class="mono" style="color:rgba(23,21,16,0.5);">poin/kg</span>
+      </span>
+    </div>
+  `).join('');
+  document.querySelectorAll('[data-rate-key]').forEach(inp=>{
+    inp.addEventListener('change', ()=>{
+      const t = WASTE_TYPES.find(w => w.key === inp.dataset.rateKey);
+      t.poinRate = parseFloat(inp.value) || 0;
+    });
+  });
+}
+renderRateList();
+document.getElementById('rateRupiahInput').addEventListener('change', (e)=>{
+  RATE_RUPIAH_PER_POIN = parseFloat(e.target.value) || 0;
+  renderPetani(); renderPencairan();
+});
+document.getElementById('rateMinInput').addEventListener('change', (e)=>{
+  MIN_PENCAIRAN_POIN = parseInt(e.target.value) || 0;
+});
+
+/* ---------- input setoran: modal ---------- */
+const stGroupSel = document.getElementById('stGroup');
+const stPetaniSel = document.getElementById('stPetani');
+const stTypeSel = document.getElementById('stType');
+const stWeightInput = document.getElementById('stWeight');
+const stPoinPreview = document.getElementById('stPoinPreview');
+const setoranBackdrop = document.getElementById('setoranBackdrop');
+
+PARTNERS.forEach(p => {
+  const opt = document.createElement('option');
+  opt.value = p; opt.textContent = p;
+  stGroupSel.appendChild(opt);
+});
+WASTE_TYPES.forEach(t => {
+  const opt = document.createElement('option');
+  opt.value = t.key; opt.textContent = t.label;
+  stTypeSel.appendChild(opt);
+});
+
+function populatePetaniForGroup(groupName, preselectId){
+  stPetaniSel.innerHTML = '<option value="">Pilih petani…</option>';
+  const list = PETANI.filter(p => p.partner === groupName);
+  list.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id; opt.textContent = p.nama + ' — ' + p.id;
+    if(preselectId && p.id === preselectId) opt.selected = true;
+    stPetaniSel.appendChild(opt);
+  });
+  stPetaniSel.disabled = list.length === 0;
+}
+
+stGroupSel.addEventListener('change', ()=> populatePetaniForGroup(stGroupSel.value));
+
+function updateStPoinPreview(){
+  const type = WASTE_TYPES.find(t => t.key === stTypeSel.value);
+  const kg = parseFloat(stWeightInput.value) || 0;
+  const poin = type ? Math.round(kg * type.poinRate) : 0;
+  stPoinPreview.textContent = poin.toLocaleString('id-ID') + ' poin';
+}
+stTypeSel.addEventListener('change', updateStPoinPreview);
+stWeightInput.addEventListener('input', updateStPoinPreview);
+
+function openSetoranModal(petaniId){
+  const p = petaniId ? PETANI.find(x => x.id === petaniId) : null;
+  stGroupSel.value = p ? p.partner : '';
+  populatePetaniForGroup(p ? p.partner : (PARTNERS[0]||''), p ? p.id : null);
+  if(!p) stGroupSel.value = '';
+  stTypeSel.value = '';
+  stWeightInput.value = '';
+  stPoinPreview.textContent = '0 poin';
+  setoranBackdrop.classList.add('open');
+}
+function closeSetoranModal(){ setoranBackdrop.classList.remove('open'); }
+
+document.getElementById('btnOpenSetoran').addEventListener('click', ()=> openSetoranModal(null));
+document.getElementById('stCancel').addEventListener('click', closeSetoranModal);
+setoranBackdrop.addEventListener('click', (e)=>{ if(e.target === setoranBackdrop) closeSetoranModal(); });
+
+document.getElementById('stSubmit').addEventListener('click', ()=>{
+  const petaniId = stPetaniSel.value;
+  const type = WASTE_TYPES.find(t => t.key === stTypeSel.value);
+  const kg = parseFloat(stWeightInput.value) || 0;
+  if(!petaniId || !type || kg <= 0){
+    showToast('Lengkapi petani, jenis limbah, dan berat dulu.');
+    return;
+  }
+  const p = PETANI.find(x => x.id === petaniId);
+  const poin = Math.round(kg * type.poinRate);
+  p.poin += poin;
+  p.totalKg += kg;
+  closeSetoranModal();
+  renderPetani();
+  showToast('✓ Setoran dicatat — ' + p.nama + ' dapat ' + poin + ' poin');
+});
+
+renderPetani();
+renderPencairan();
+
+/* ---------- pengaturan: save (mock) ---------- */
+document.getElementById('btnSave').addEventListener('click', () => {
+  const msg = document.getElementById('saveMsg');
+  msg.classList.add('show');
+  setTimeout(()=> msg.classList.remove('show'), 2400);
+});
+
+/* ---------- toast helper ---------- */
+let toastTimer = null;
+function showToast(text){
+  const t = document.getElementById('appToast');
+  t.textContent = text;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.classList.remove('show'), 3200);
+}
+
+/* ---------- jadwalkan pickup: floating button + modal ---------- */
+const pkPartnerSel = document.getElementById('pkPartner');
+PARTNERS.forEach(p => {
+  const opt = document.createElement('option');
+  opt.value = p; opt.textContent = p;
+  pkPartnerSel.appendChild(opt);
+});
+const pkTypeSel = document.getElementById('pkType');
+WASTE_TYPES.forEach(t => {
+  const opt = document.createElement('option');
+  opt.value = t.key; opt.textContent = t.label;
+  pkTypeSel.appendChild(opt);
+});
+const pkWarehouseSel = document.getElementById('pkWarehouse');
+WAREHOUSES.forEach(w => {
+  const opt = document.createElement('option');
+  opt.value = w.id; opt.textContent = w.name + ' — ' + w.location;
+  pkWarehouseSel.appendChild(opt);
+});
+
+const pickupBackdrop = document.getElementById('pickupBackdrop');
+function openPickupModal(){
+  pickupBackdrop.classList.add('open');
+  const dateInput = document.getElementById('pkDate');
+  if(!dateInput.value){
+    const d = new Date('2026-08-04'); d.setDate(d.getDate() + 2);
+    dateInput.value = d.toISOString().slice(0,10);
+  }
+}
+function closePickupModal(){ pickupBackdrop.classList.remove('open'); }
+
+document.getElementById('fabPickup').addEventListener('click', openPickupModal);
+document.getElementById('pkCancel').addEventListener('click', closePickupModal);
+pickupBackdrop.addEventListener('click', (e)=>{ if(e.target === pickupBackdrop) closePickupModal(); });
+document.addEventListener('keydown', (e)=>{
+  if(e.key !== 'Escape') return;
+  if(pickupBackdrop.classList.contains('open')) closePickupModal();
+  if(setoranBackdrop.classList.contains('open')) closeSetoranModal();
+});
+
+document.getElementById('pkSubmit').addEventListener('click', () => {
+  const partner = pkPartnerSel.value;
+  const type = pkTypeSel.value;
+  const date = document.getElementById('pkDate').value;
+  const warehouse = pkWarehouseSel.value;
+  if(!partner || !type || !date || !warehouse){
+    showToast('Lengkapi mitra, jenis limbah, tanggal, dan gudang tujuan dulu.');
+    return;
+  }
+  const dateLabel = new Intl.DateTimeFormat('id-ID',{day:'2-digit',month:'long',year:'numeric'}).format(new Date(date));
+  closePickupModal();
+  showToast('✓ Pickup dijadwalkan untuk ' + dateLabel);
+  document.getElementById('pkWeight').value = '';
+  document.getElementById('pkNote').value = '';
+});
+</script>
+</body>
+</html>

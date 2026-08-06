@@ -1,0 +1,1747 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editor Kotak — Tandur</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <nav class="enav">
+    <div class="enav-left">
+      <a href="index.html" class="logo" style="text-decoration:none;"><img src="assets/logo/tandur.png" alt="Tandur" style="height:22px;"></a>
+      <div class="enav-file" id="fileMenuWrap">
+        <button type="button" class="enav-file-btn" id="fileMenuBtn">
+          File
+          <svg class="enav-chevron" viewBox="0 0 10 6" width="10" height="6"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="enav-file-dropdown" id="fileMenuDropdown">
+          <button class="cm-item" disabled><span>Undo</span><span class="cm-shortcut">Ctrl+Z</span></button>
+          <button class="cm-item" disabled><span>Redo</span><span class="cm-shortcut">Ctrl+Y</span></button>
+          <div class="cm-sep"></div>
+          <button class="cm-item" id="fmSave"><span>Save</span></button>
+          <button class="cm-item" id="fmSaveCopy"><span>Save as copy</span></button>
+          <button class="cm-item" id="fmLoadPrev"><span>Load previous design</span></button>
+          <div class="cm-sep"></div>
+          <button class="cm-item" id="fmRuler"><span>Show ruler</span></button>
+          <button class="cm-item" id="fmGrid"><span>Show grid</span></button>
+          <div class="cm-sep"></div>
+          <button class="cm-item" id="fmDownloadDieline"><span>Download dieline</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="enav-title mono">EDITOR KOTAK — <span id="editorSubtitle">TERRA BOX</span></div>
+
+    <div class="enav-right">
+      <button type="button" class="enav-icon-btn" id="uploadDielineBtn" title="Upload Dieline">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10.5V2.5"/><path d="M4.8 5.5L8 2.3l3.2 3.2"/><path d="M2.5 10v2.2a1 1 0 001 1h9a1 1 0 001-1V10"/></svg>
+        <span>Upload Dieline</span>
+      </button>
+      <button type="button" class="enav-icon-btn" id="downloadDielineBtn" title="Download Dieline">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5v8"/><path d="M4.8 7.5L8 10.7l3.2-3.2"/><path d="M2.5 10v2.2a1 1 0 001 1h9a1 1 0 001-1V10"/></svg>
+        <span>Download Dieline</span>
+      </button>
+      <button type="button" class="enav-icon-btn enav-icon-only" id="helpBtn" title="Bantuan">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6.2"/><path d="M6.1 6.2a1.9 1.9 0 013.6.8c0 1.3-1.7 1.5-1.7 2.8" stroke-linecap="round"/><circle cx="8" cy="11.6" r="0.15" fill="currentColor" stroke-width="0.9"/></svg>
+      </button>
+      <button type="button" class="enav-icon-btn enav-icon-only" id="saveBtn" title="Simpan">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M2.8 2.8h8.4L13.2 5v8.2a1 1 0 01-1 1H2.8a1 1 0 01-1-1V3.8a1 1 0 011-1z"/><path d="M4.6 2.8v3.4h5.2V2.8"/><path d="M4.8 9.4h6.4v3.8H4.8z"/></svg>
+      </button>
+      <button class="btn btn-solid btn-sm" id="quoteBtn">Minta Penawaran</button>
+    </div>
+  </nav>
+</header>
+
+<section class="editor" id="desain">
+  <div class="cwe-bar empty" id="cweBar">
+    <span class="cwe-hint">Pilih elemen di kanvas untuk menampilkan opsi cepat di sini.</span>
+  </div>
+
+  <div class="editor-shell">
+    <div class="editor-sidebar">
+      <button class="ed-nav-btn active" data-drawer="config" title="Config">⚙<span>Config</span></button>
+      <button class="ed-nav-btn" data-drawer="uploads" title="Upload">⬆<span>Upload</span></button>
+      <button class="ed-nav-btn" data-drawer="text" title="Teks">T<span>Teks</span></button>
+      <button class="ed-nav-btn" data-drawer="shapes" title="Bentuk">◇<span>Bentuk</span></button>
+      <button class="ed-nav-btn" data-drawer="background" title="Warna">▦<span>Warna</span></button>
+    </div>
+
+    <div class="editor-drawer">
+      <div class="drawer-section" data-section="config">
+        <div class="drawer-title">Konfigurasi Kotak</div>
+        <div class="field">
+          <label>Tipe Kotak</label>
+          <div class="seg" id="typeSeg">
+            <button data-type="box" data-price="2600" class="active">Terra Box</button>
+            <button data-type="burger" data-price="2200">Terra Burger</button>
+            <button data-type="bakery" data-price="3200">Terra Bakery</button>
+            <button data-type="tray" data-price="1800">Terra Tray</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Ukuran</label>
+          <div class="size-tabs" id="sizeTabs">
+            <button type="button" class="size-tab active" data-tab="standard">Ukuran Standar</button>
+            <button type="button" class="size-tab" data-tab="custom">Ukuran Custom</button>
+          </div>
+
+          <div class="size-panel" id="sizeStandardPanel">
+            <div class="size-select-wrap">
+              <button type="button" class="size-select" id="sizeSelectBtn">
+                <span id="sizeSelectLabel">M · 20×14×6 CM</span>
+                <svg class="size-select-chevron" viewBox="0 0 10 6" width="10" height="6"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="size-select-dropdown" id="sizeSelectDropdown">
+                <button type="button" class="size-option" data-size="S" data-mult="0.85">S · 16×12×5 CM</button>
+                <button type="button" class="size-option active" data-size="M" data-mult="1">M · 20×14×6 CM</button>
+                <button type="button" class="size-option" data-size="L" data-mult="1.35">L · 24×17×7 CM</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="size-panel" id="sizeCustomPanel" style="display:none">
+            <div class="dim-steppers">
+              <div class="dim-stepper">
+                <label>Panjang (cm)</label>
+                <div class="stepper-row">
+                  <button type="button" class="stepper-btn" data-dim="w" data-dir="-1" aria-label="Kurangi">‹</button>
+                  <input type="text" inputmode="numeric" id="customW" value="25">
+                  <button type="button" class="stepper-btn" data-dim="w" data-dir="1" aria-label="Tambah">›</button>
+                </div>
+              </div>
+              <div class="dim-stepper">
+                <label>Lebar (cm)</label>
+                <div class="stepper-row">
+                  <button type="button" class="stepper-btn" data-dim="d" data-dir="-1" aria-label="Kurangi">‹</button>
+                  <input type="text" inputmode="numeric" id="customD" value="20">
+                  <button type="button" class="stepper-btn" data-dim="d" data-dir="1" aria-label="Tambah">›</button>
+                </div>
+              </div>
+              <div class="dim-stepper">
+                <label>Tinggi (cm)</label>
+                <div class="stepper-row">
+                  <button type="button" class="stepper-btn" data-dim="h" data-dir="-1" aria-label="Kurangi">‹</button>
+                  <input type="text" inputmode="numeric" id="customH" value="12">
+                  <button type="button" class="stepper-btn" data-dim="h" data-dir="1" aria-label="Tambah">›</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Jumlah Pesanan</label>
+          <div class="qty-row">
+            <button type="button" id="qtyMinus">−</button>
+            <input type="text" id="qtyInput" value="100" inputmode="numeric">
+            <button type="button" id="qtyPlus">+</button>
+            <span class="mono" style="font-size:10.5px; color:#6b6656;">pcs</span>
+          </div>
+        </div>
+        <div class="hint" id="configHint">Klik salah satu sisi kotak di kanvas untuk mulai edit sisi tersebut.</div>
+      </div>
+
+      <div class="drawer-section" data-section="uploads" style="display:none">
+        <div class="drawer-title">Upload Logo / Gambar</div>
+        <div class="upload-box" id="uploadBox">Klik untuk unggah PNG/JPG</div>
+        <input type="file" id="logoInput" accept="image/*" style="display:none">
+        <div class="upload-thumbs" id="uploadThumbs"></div>
+        <div class="hint">Klik thumbnail untuk menambahkan gambar ke sisi <b id="uploadTargetLabel">FRONT</b> yang sedang aktif.</div>
+      </div>
+
+      <div class="drawer-section" data-section="text" style="display:none">
+        <div class="drawer-title">Teks</div>
+        <button class="btn full-btn" id="addTextBtn">+ Tambah Teks</button>
+        <div class="hint">Teks akan ditambahkan ke sisi <b id="textTargetLabel">FRONT</b> yang sedang aktif. Klik dua kali pada teks di kanvas untuk mengubahnya langsung.</div>
+      </div>
+
+      <div class="drawer-section" data-section="shapes" style="display:none">
+        <div class="drawer-title">Bentuk</div>
+        <div class="et-row">
+          <button class="btn btn-sm" id="addRectBtn">+ Kotak</button>
+          <button class="btn btn-sm" id="addCircleBtn">+ Lingkaran</button>
+        </div>
+        <div class="hint">Bentuk akan ditambahkan ke sisi <b id="shapeTargetLabel">FRONT</b> yang sedang aktif.</div>
+      </div>
+
+      <div class="drawer-section" data-section="background">
+        <div class="drawer-title">Warna Dasar Kotak</div>
+        <div class="field">
+          <div class="swatches" id="colorSwatches">
+            <span class="swatch active" style="background:#A9784C" data-color="#A9784C" title="Kraft Natural"></span>
+            <span class="swatch" style="background:#FAF7F0" data-color="#FAF7F0" title="Putih"></span>
+            <span class="swatch" style="background:#171510" data-color="#171510" title="Hitam"></span>
+            <span class="swatch" style="background:#00AEEF" data-color="#00AEEF" title="Cyan"></span>
+            <span class="swatch" style="background:#EC1E79" data-color="#EC1E79" title="Magenta"></span>
+            <span class="swatch" style="background:#F5C518" data-color="#F5C518" title="Kuning"></span>
+          </div>
+        </div>
+        <div class="hint">Berlaku untuk semua sisi kotak sebagai warna dasar.</div>
+      </div>
+    </div>
+
+    <div class="editor-canvas-wrap">
+      <div class="canvas-toolbar"><span>OUTSIDE · KLIK SISI UNTUK EDIT</span><span id="panelIndicator">SISI: FRONT</span></div>
+      <div class="flat-grid-wrap">
+      <div class="flat-grid" id="flatGrid">
+        <div class="panel-cell" data-panel="top"><div class="panel-label">TOP</div><div class="panel-canvas" data-panel="top"></div></div>
+        <div class="panel-cell" data-panel="left"><div class="panel-label">LEFT</div><div class="panel-canvas" data-panel="left"></div></div>
+        <div class="panel-cell active" data-panel="front"><div class="panel-label">FRONT</div><div class="panel-canvas" data-panel="front"></div></div>
+        <div class="panel-cell" data-panel="right"><div class="panel-label">RIGHT</div><div class="panel-canvas" data-panel="right"></div></div>
+        <div class="panel-cell" data-panel="back"><div class="panel-label">BACK</div><div class="panel-canvas" data-panel="back"></div></div>
+        <div class="panel-cell" data-panel="bottom"><div class="panel-label">BOTTOM</div><div class="panel-canvas" data-panel="bottom"></div></div>
+      </div>
+      </div>
+    </div>
+
+    <div class="editor-preview">
+      <div class="preview-stage" id="previewStage3d">
+        <div class="box3d" id="box3d">
+          <div class="face" data-face="front"><div class="face-canvas"></div></div>
+          <div class="face" data-face="back"><div class="face-canvas"></div></div>
+          <div class="face" data-face="right"><div class="face-canvas"></div></div>
+          <div class="face" data-face="left"><div class="face-canvas"></div></div>
+          <div class="lid-hinge" id="lidHinge">
+            <div class="face" data-face="top"><div class="face-canvas"></div><div class="flap fl"></div><div class="flap fr"></div></div>
+          </div>
+          <div class="face" data-face="bottom"><div class="face-canvas"></div></div>
+        </div>
+        <div class="dim-label dim-w" id="dimW">25</div>
+        <div class="dim-label dim-h" id="dimH">12</div>
+        <div class="dim-label dim-d" id="dimD">20</div>
+      </div>
+      <div class="stage-caption"><span>PRATINJAU 3D · SERET UNTUK PUTAR</span><span id="specOut">SHIPPING · M · 25×20×12CM</span></div>
+      <div class="price-panel">
+        <div class="amount" id="priceOut">Rp 360.000<span>Total estimasi (100 pcs)</span></div>
+        <div style="text-align:right;">
+          <div class="mono" id="unitPriceOut" style="font-size:12.5px; color:#6b6656;">≈ Rp 3.600 / pcs</div>
+          <div class="mono" id="discountOut" style="font-size:11px; color:var(--kraft-dark); margin-top:4px;"></div>
+        </div>
+      </div>
+      <div class="quote-msg" id="quoteMsg"></div>
+    </div>
+  </div>
+</section>
+
+<div class="context-menu" id="contextMenu"></div>
+<div class="cwe-popover" id="cwePopover"></div>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <div class="logo" style="margin-bottom:14px;"><img src="assets/logo/tandur.png" alt="Tandur" style="height:24px;"></div>
+      <p style="font-size:13px; color:#a8a390; max-width:32ch;">Platform desain kemasan makanan custom untuk resto, kafe, dan brand F&amp;B — dari kotak makan sampai nampan.</p>
+    </div>
+    <div><h4>Produk</h4><ul><li><a href="index.html#katalog">Terra Box</a></li><li><a href="index.html#katalog">Terra Burger</a></li><li><a href="index.html#katalog">Terra Bakery</a></li><li><a href="index.html#katalog">Terra Tray</a></li></ul></div>
+    <div><h4>Perusahaan</h4><ul><li><a href="index.html#cara-kerja">Cara Kerja</a></li><li><a href="editor.html">Editor Desain</a></li><li><a href="#">Kontak</a></li></ul></div>
+    <div><h4>Spesifikasi</h4><ul class="mono" style="font-size:12px;"><li>MOQ mulai 50 pcs</li><li>Cetak CMYK full color</li><li>Produksi 5–7 hari kerja</li></ul></div>
+  </div>
+  <div class="wrap foot-bottom"><span>© 2026 Tandur. Semua hak dilindungi.</span><span>DIELINE NO. 00214-B · REV 3</span></div>
+</footer>
+
+<script type="module">
+import { supabase, getCurrentUser, getProductTypeMap } from './supabase-client.js';
+
+/* ============================ SUPABASE ============================ */
+// currentUser: profil yang sedang login (null = belum login)
+// productTypeMap: slug -> { id, slug, base_price_per_pcs } dari tabel product_types
+// currentDesignId: id baris di tabel `designs` kalau desain ini sudah pernah disimpan
+let currentUser = null;
+let productTypeMap = {};
+let currentDesignId = null;
+
+async function initSupabase(){
+  currentUser = await getCurrentUser();
+  productTypeMap = await getProductTypeMap();
+  // Sinkronkan harga dasar tiap tipe dengan yang ada di database (kalau berhasil dimuat)
+  document.querySelectorAll('#typeSeg button[data-type]').forEach(btn=>{
+    const row = productTypeMap[btn.dataset.type];
+    if(row){
+      btn.dataset.price = row.base_price_per_pcs;
+      if(btn.dataset.type === box.type) box.basePrice = row.base_price_per_pcs;
+    }
+  });
+  updatePrice();
+}
+
+/* ============================ STATE ============================ */
+const PANEL_KEYS = ['top','left','front','right','back','bottom'];
+const DEFAULT_FONT = "'Big Shoulders Display',sans-serif";
+let panels = {
+  top:{elements:[]}, left:{elements:[]}, right:{elements:[]}, back:{elements:[]}, bottom:{elements:[]},
+  front:{elements:[{id:'seed1', type:'text', x:15, y:38, w:70, h:24, text:'Brand Kamu', color:'#171510', fontSize:16, fontFamily:DEFAULT_FONT, bold:true, italic:false}]}
+};
+let boxColor = '#A9784C';
+let selectedPanel = 'front';
+let selection = new Set(['seed1']);   // multi-select ids (shift+click)
+let lastSelectedId = 'seed1';         // primary element for single-edit toolbar
+let clipboard = [];
+let uploadedImages = [];
+let box = { type:'box', basePrice:2600, size:'M', mult:1, qty:100 };
+
+/* Real dimensions (cm) per packaging category — each Terra type has its own
+   proportions (a clamshell food box isn't shaped like a flat tray or a cake
+   box), so sizes are looked up per type rather than shared across all types. */
+const TYPE_SIZES = {
+  box:    { S:{w:16,d:12,h:5},  M:{w:20,d:14,h:6},  L:{w:24,d:17,h:7}  },
+  burger: { S:{w:11,d:11,h:7},  M:{w:13,d:13,h:8},  L:{w:15,d:15,h:9}  },
+  bakery: { S:{w:16,d:16,h:8},  M:{w:20,d:20,h:10}, L:{w:24,d:24,h:12} },
+  tray:   { S:{w:15,d:10,h:3},  M:{w:20,d:14,h:4},  L:{w:25,d:18,h:5}  }
+};
+const TYPE_LABEL = { box:'Terra Box', burger:'Terra Burger', bakery:'Terra Bakery', tray:'Terra Tray' };
+
+/* Straight-on rotateX/rotateY for the 3D preview per panel — derived from
+   each face's own placement transform in updateBox3DGeometry() so that
+   "look straight at RIGHT" really points the camera at the right face's
+   outward normal, not just an approximate angle. */
+const PANEL_VIEW_ANGLES = {
+  front:  { x:0,   y:0   },
+  back:   { x:0,   y:180 },
+  right:  { x:0,   y:-90 },
+  left:   { x:0,   y:90  },
+  top:    { x:-90, y:0   },
+  bottom: { x:90,  y:0   }
+};
+/* Current 3D box orientation, shared between manual drag-to-rotate and the
+   click-a-panel-to-focus behavior below, so both read/write the same state
+   instead of drag keeping its own local closure copy. */
+let boxRotX = -20, boxRotY = -34;
+let lastFocusedPanel = 'front'; // prevents snapping camera on initial load
+
+/* Safe-print-area margins for the flat dieline editor. These mirror the
+   clip-path taper percentages used on the 3D preview (see style.css
+   .box3d[data-type] rules): a wall panel that curves in toward the fold
+   in 3D isn't a flat, reliable print surface right up to its edge — so
+   the same margin is blurred out and unclickable here, and design
+   elements should only be placed in the inset "safe area" that remains. */
+const SIDE_MARGIN = {
+  box:    { front:12, back:12, left:22, right:22 },
+  burger: { front:12, back:12, left:22, right:22 },
+  tray:   { front:16, back:16, left:32, right:32 },
+  bakery: { front:0,  back:0,  left:0,  right:0  }
+};
+const SIZE_LABEL = { S:'', M:'', L:'', CUSTOM:'' };
+const SIZE_DIMS = { S:null, M:null, L:null, CUSTOM:null };
+
+/* Pulls the current type's S/M/L dims into the live SIZE_DIMS/SIZE_LABEL
+   lookup tables that the rest of the app (price, dieline, 3D) reads from. */
+function rebuildSizeDimsForType(){
+  const t = TYPE_SIZES[box.type];
+  SIZE_DIMS.S = t.S; SIZE_DIMS.M = t.M; SIZE_DIMS.L = t.L;
+  SIZE_LABEL.S = `${t.S.w}×${t.S.d}×${t.S.h}`;
+  SIZE_LABEL.M = `${t.M.w}×${t.M.d}×${t.M.h}`;
+  SIZE_LABEL.L = `${t.L.w}×${t.L.d}×${t.L.h}`;
+  if(!SIZE_DIMS.CUSTOM){ SIZE_DIMS.CUSTOM = {...t.M}; SIZE_LABEL.CUSTOM = SIZE_LABEL.M; }
+}
+rebuildSizeDimsForType();
+
+/* Refreshes the size-picker dropdown text so it always shows the real dims
+   of the currently selected packaging type instead of stale numbers. */
+function refreshSizeOptionsUI(){
+  const t = TYPE_SIZES[box.type];
+  document.querySelectorAll('#sizeSelectDropdown .size-option').forEach(opt=>{
+    const d = t[opt.dataset.size];
+    opt.textContent = `${opt.dataset.size} · ${d.w}×${d.d}×${d.h} CM`;
+  });
+  if(box.size !== 'CUSTOM'){
+    const active = document.querySelector('#sizeSelectDropdown .size-option.active') || document.querySelector('#sizeSelectDropdown .size-option[data-size="M"]');
+    if(active) document.getElementById('sizeSelectLabel').textContent = active.textContent;
+  }
+}
+
+/* Per-type hint text + which sides actually exist for that packaging type. */
+const TYPE_HINT = {
+  box:    'Tutup ditampilkan dalam posisi terbuka di pratinjau 3D supaya bagian dalam terlihat. Klik salah satu sisi kotak untuk mulai edit.',
+  burger: 'Tutup ditampilkan dalam posisi terbuka di pratinjau 3D supaya bagian dalam terlihat. Klik salah satu sisi kotak untuk mulai edit.',
+  bakery: 'Klik salah satu sisi kotak di kanvas untuk mulai edit sisi tersebut.',
+  tray:   'Nampan ini terbuka tanpa tutup, jadi sisi TOP tidak ditampilkan di dieline. Klik salah satu sisi lainnya untuk mulai edit.'
+};
+function updateConfigHint(){
+  const hintEl = document.getElementById('configHint');
+  if(hintEl) hintEl.textContent = TYPE_HINT[box.type] || TYPE_HINT.box;
+}
+
+function uid(){ return 'e' + Math.random().toString(36).slice(2,9); }
+function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+
+/* Precision fix: font-size/stroke-width/letter-spacing were previously
+   written as raw px, but the flat editor's panel and the 3D preview's face
+   render the SAME cm-sized panel at very different actual pixel widths (the
+   3D stage is much smaller on screen). A fixed px value then looks
+   proportionally bigger on the small 3D face than on the large flat panel —
+   exactly the "Brand Kamu" mismatch seen between the two views. Converting
+   to cqw (container-query width units, relative to the panel/face's own
+   rendered width via container-type:inline-size in style.css) makes these
+   values scale automatically and identically in both places. REF_PANEL_PX
+   is just the assumed panel width the px numbers in the UI (e.g. "16" in
+   the font-size field) were designed against. */
+const REF_PANEL_PX = 400;
+function cqw(px){ return (px * 100 / REF_PANEL_PX) + 'cqw'; }
+function findElement(id){
+  for(const k of PANEL_KEYS){
+    const el = panels[k].elements.find(e=>e.id===id);
+    if(el) return { el, panelKey:k };
+  }
+  return null;
+}
+
+/* ============================ RENDER ============================ */
+function buildElementNode(el, interactive, panelKey){
+  const node = document.createElement('div');
+  node.className = 'panel-el';
+  node.style.left = el.x+'%'; node.style.top = el.y+'%';
+  node.style.width = el.w+'%'; node.style.height = el.h+'%';
+  node.style.opacity = (el.opacity==null ? 100 : el.opacity)/100;
+  node.dataset.id = el.id;
+
+  if(el.type==='text'){
+    node.classList.add('el-text');
+    node.style.color = el.color;
+    node.style.fontSize = cqw(el.fontSize||16);
+    node.style.fontFamily = el.fontFamily || DEFAULT_FONT;
+    node.style.fontWeight = el.bold===false ? '400' : '800';
+    node.style.fontStyle = el.italic ? 'italic' : 'normal';
+    node.style.textTransform = el.uppercase ? 'uppercase' : 'none';
+    node.style.letterSpacing = cqw(el.letterSpacing||0);
+    node.style.justifyContent = el.align==='left' ? 'flex-start' : el.align==='right' ? 'flex-end' : 'center';
+    node.style.textAlign = el.align || 'center';
+    if(el.strokeWidth){ node.style.webkitTextStroke = cqw(el.strokeWidth)+' '+(el.strokeColor||'#171510'); }
+    node.textContent = el.text;
+  } else if(el.type==='image'){
+    node.classList.add('el-image');
+    const img = document.createElement('img'); img.src = el.src; node.appendChild(img);
+    if(el.strokeWidth){ node.style.border = cqw(el.strokeWidth)+' solid '+(el.strokeColor||'#171510'); }
+  } else if(el.type==='shape'){
+    const inner = document.createElement('div');
+    inner.className='el-shape'; inner.style.background = el.fill;
+    if(el.shape==='circle') inner.style.borderRadius='50%';
+    if(el.strokeWidth){ inner.style.border = cqw(el.strokeWidth)+' solid '+(el.strokeColor||'#171510'); }
+    node.appendChild(inner);
+  }
+
+  if(el.locked) node.classList.add('locked');
+
+  if(interactive){
+    node.classList.add('interactive');
+    const isSelected = selection.has(el.id);
+    if(isSelected){
+      node.classList.add('selected');
+      if(selection.size===1 && !el.locked){
+        const handle = document.createElement('div');
+        handle.className = 'resize-handle';
+        handle.addEventListener('pointerdown', (e)=>{ e.stopPropagation(); startResize(e, el, node); });
+        node.appendChild(handle);
+      }
+    }
+    node.addEventListener('pointerdown', (e)=> startDrag(e, el, node, panelKey));
+    node.addEventListener('click', (e)=> e.stopPropagation());
+    node.addEventListener('dblclick', (e)=>{ e.stopPropagation(); if(el.type==='text' && !el.locked) editTextInline(el, node); });
+    node.addEventListener('contextmenu', (e)=>{
+      e.preventDefault(); e.stopPropagation();
+      if(!selection.has(el.id)) selectOnly(el.id, panelKey);
+      openElementContextMenu(e.clientX, e.clientY);
+    });
+  }
+  return node;
+}
+
+/* Terra Tray has no lid — the TOP dieline cell and 3D face don't exist for
+   it, so we lock that one panel instead of pretending it's editable. */
+function panelDisabled(key){ return key==='top' && box.type==='tray'; }
+
+function addBakeryWindow(container){
+  const win = document.createElement('div');
+  win.className = 'bakery-window';
+  win.setAttribute('aria-hidden','true');
+  container.appendChild(win);
+}
+
+function renderPanel(key){
+  const cell = document.querySelector(`.panel-cell[data-panel="${key}"]`);
+  const disabled = panelDisabled(key);
+  if(cell) cell.classList.toggle('disabled', disabled);
+
+  const flatEl = document.querySelector(`.panel-canvas[data-panel="${key}"]`);
+  flatEl.style.background = boxColor; flatEl.innerHTML='';
+  if(key==='front' && box.type==='bakery') addBakeryWindow(flatEl);
+  panels[key].elements.forEach(el => flatEl.appendChild(buildElementNode(el, true, key)));
+  flatEl.onclick = (e)=>{ if(disabled) return; if(e.target===flatEl) selectPanel(key); };
+  flatEl.oncontextmenu = (e)=>{
+    if(disabled) return;
+    if(e.target!==flatEl) return;
+    e.preventDefault();
+    selectedPanel = key;
+    openPastePanelMenu(e.clientX, e.clientY, key);
+  };
+
+  const face3d = document.querySelector(`.face[data-face="${key}"]`);
+  const faceEl = face3d ? face3d.querySelector('.face-canvas') : null;
+  if(faceEl){
+    face3d.style.background = boxColor;
+    faceEl.style.background = ''; faceEl.innerHTML='';
+    if(key==='front' && box.type==='bakery') addBakeryWindow(faceEl);
+    panels[key].elements.forEach(el => faceEl.appendChild(buildElementNode(el, false, key)));
+  }
+}
+
+function renderAll(){
+  PANEL_KEYS.forEach(renderPanel);
+  updatePanelUI();
+  updateCWE();
+  updatePrice();
+}
+
+function updatePanelUI(){
+  document.querySelectorAll('.panel-cell').forEach(cell=>{
+    cell.classList.toggle('active', cell.dataset.panel===selectedPanel);
+  });
+  document.getElementById('panelIndicator').textContent = 'SISI: ' + selectedPanel.toUpperCase();
+  ['uploadTargetLabel','textTargetLabel','shapeTargetLabel'].forEach(id=>{
+    document.getElementById(id).textContent = selectedPanel.toUpperCase();
+  });
+  focusCameraOnPanel(selectedPanel);
+}
+
+/* Applies boxRotX/boxRotY to the 3D box. animate=true eases into the new
+   angle (used when snapping to a panel); animate=false is instant (used
+   while the user is actively dragging to rotate manually). The transition
+   is cleared again after it finishes so a follow-up manual drag isn't
+   fighting a lingering CSS transition. */
+function applyBoxRotation(animate){
+  const box3d = document.getElementById('box3d');
+  if(!box3d) return;
+  box3d.style.transition = animate ? 'transform .5s cubic-bezier(.22,.9,.3,1)' : 'none';
+  box3d.style.transform = `rotateX(${boxRotX}deg) rotateY(${boxRotY}deg)`;
+  if(animate){
+    clearTimeout(applyBoxRotation._t);
+    applyBoxRotation._t = setTimeout(()=>{ if(box3d) box3d.style.transition=''; }, 520);
+  }
+}
+
+/* Rotates the 3D preview to look straight at whichever panel is currently
+   active in the flat editor — clicking FRONT/LEFT/RIGHT/etc (or an element
+   on one of those panels, or dragging an element onto a different panel)
+   all funnel through selectedPanel + updatePanelUI, so this covers all of
+   them from one place. Guarded so it only moves the camera when the active
+   panel actually changed, not on every unrelated re-render. */
+function focusCameraOnPanel(key){
+  if(key === lastFocusedPanel) return;
+  lastFocusedPanel = key;
+  const target = PANEL_VIEW_ANGLES[key];
+  if(!target) return;
+  boxRotX = target.x; boxRotY = target.y;
+  applyBoxRotation(true);
+}
+
+/* ============================ SELECTION ============================ */
+function selectPanel(key){
+  selectedPanel = key;
+  selection = new Set();
+  lastSelectedId = null;
+  renderAll();
+}
+function selectOnly(id, panelKey){
+  selection = new Set([id]);
+  lastSelectedId = id;
+  selectedPanel = panelKey;
+  renderAll();
+}
+function toggleSelect(id, panelKey){
+  const first = selection.size ? findElement(Array.from(selection)[0]) : null;
+  if(first && first.panelKey !== panelKey){ selection = new Set(); }
+  if(selection.has(id)) selection.delete(id); else selection.add(id);
+  lastSelectedId = id;
+  selectedPanel = panelKey;
+  renderAll();
+}
+
+/* ============================ ICONS ============================ */
+const ICONS = {
+  link: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M6.3 9.7l3.4-3.4"/><path d="M5 8.6a2.1 2.1 0 010-3l1.3-1.3a2.1 2.1 0 013 3"/><path d="M11 7.4a2.1 2.1 0 010 3l-1.3 1.3a2.1 2.1 0 01-3-3"/></svg>',
+  thickness: '<svg viewBox="0 0 16 16" stroke="currentColor" stroke-linecap="round"><line x1="2" y1="4.5" x2="14" y2="4.5" stroke-width="1"/><line x1="2" y1="8" x2="14" y2="8" stroke-width="2"/><line x1="2" y1="12" x2="14" y2="12" stroke-width="3.2"/></svg>',
+  layer: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M8 2l6 3.2-6 3.2-6-3.2z"/><path d="M2 9.6L8 12.8l6-3.2"/></svg>',
+  align: '<svg viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><line x1="2" y1="3.5" x2="14" y2="3.5"/><line x1="4.5" y1="8" x2="11.5" y2="8"/><line x1="2" y1="12.5" x2="14" y2="12.5"/></svg>',
+  opacity: '<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M8 2a6 6 0 010 12z" fill="currentColor"/></svg>',
+  duplicate: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2.5" y="5.5" width="8" height="8" rx="1"/><path d="M5.5 5.5V3.5a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1h-2"/></svg>',
+  lock: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3.3" y="7.2" width="9.4" height="6.4" rx="1"/><path d="M5.3 7.2V5a2.7 2.7 0 015.4 0v2.2"/></svg>',
+  unlock: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3.3" y="7.2" width="9.4" height="6.4" rx="1"/><path d="M5.3 7.2V5a2.7 2.7 0 015.2-1"/></svg>',
+  trash: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h10"/><path d="M6 5V3.6a1 1 0 011-1h2a1 1 0 011 1V5"/><path d="M4.4 5l.7 8a1 1 0 001 .9h3.8a1 1 0 001-.9l.7-8"/></svg>',
+  spacing: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><line x1="3.5" y1="3" x2="3.5" y2="13"/><line x1="12.5" y1="3" x2="12.5" y2="13"/><path d="M6 8h4M8.5 6l1.5 2-1.5 2M7.5 6L6 8l1.5 2"/></svg>',
+  uppercase: '<span style="font-size:11px;font-weight:700;letter-spacing:-0.5px;">Aa</span>',
+  frontA: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="5" y="2.5" width="9" height="9" rx="1"/><rect x="2" y="5.5" width="9" height="9" rx="1" fill="var(--paper)"/></svg>',
+  forwardA: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="5" y="2.5" width="9" height="9" rx="1"/><rect x="2" y="5.5" width="9" height="9" rx="1" fill="var(--paper)" opacity="0.5"/></svg>',
+  backA: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="5.5" width="9" height="9" rx="1"/><rect x="5" y="2.5" width="9" height="9" rx="1" fill="var(--paper)" opacity="0.5"/></svg>',
+  alignLeft: '<svg viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><line x1="2" y1="3" x2="2" y2="13"/><line x1="2" y1="6" x2="12" y2="6"/><line x1="2" y1="10" x2="9" y2="10"/></svg>',
+  alignCenterH: '<svg viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><line x1="8" y1="2" x2="8" y2="14"/><line x1="3" y1="6" x2="13" y2="6"/><line x1="5" y1="10" x2="11" y2="10"/></svg>',
+  alignRight: '<svg viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><line x1="14" y1="3" x2="14" y2="13"/><line x1="4" y1="6" x2="14" y2="6"/><line x1="7" y1="10" x2="14" y2="10"/></svg>',
+  alignTop: '<svg viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><line x1="3" y1="2" x2="13" y2="2"/><line x1="6" y1="2" x2="6" y2="12"/><line x1="10" y1="2" x2="10" y2="9"/></svg>',
+  alignMiddleV: '<svg viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><line x1="2" y1="8" x2="14" y2="8"/><line x1="6" y1="3" x2="6" y2="13"/><line x1="10" y1="5" x2="10" y2="11"/></svg>',
+  alignBottom: '<svg viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><line x1="3" y1="14" x2="13" y2="14"/><line x1="6" y1="4" x2="6" y2="14"/><line x1="10" y1="7" x2="10" y2="14"/></svg>',
+  distH: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1.5" y="4" width="3" height="8" rx="0.5"/><rect x="6.5" y="4" width="3" height="8" rx="0.5"/><rect x="11.5" y="4" width="3" height="8" rx="0.5"/></svg>',
+  distV: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="4" y="1.5" width="8" height="3" rx="0.5"/><rect x="4" y="6.5" width="8" height="3" rx="0.5"/><rect x="4" y="11.5" width="8" height="3" rx="0.5"/></svg>',
+  textLeft: '<svg viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="9" y2="8"/><line x1="2" y1="12" x2="12" y2="12"/></svg>',
+  textCenter: '<svg viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><line x1="2" y1="4" x2="14" y2="4"/><line x1="4.5" y1="8" x2="11.5" y2="8"/><line x1="3" y1="12" x2="13" y2="12"/></svg>',
+  textRight: '<svg viewBox="0 0 16 16" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><line x1="2" y1="4" x2="14" y2="4"/><line x1="7" y1="8" x2="14" y2="8"/><line x1="4" y1="12" x2="14" y2="12"/></svg>',
+};
+const PALETTE = ['#171510','#FAF7F0','#A9784C','#00AEEF','#EC1E79','#F5C518'];
+
+/* physical size (cm) of each panel, used to show real W/H in the CWE bar */
+function panelPhysicalDims(panelKey){
+  const d = SIZE_DIMS[box.size];
+  if(panelKey==='front' || panelKey==='back') return { w:d.w, h:d.h };
+  if(panelKey==='left' || panelKey==='right') return { w:d.d, h:d.h };
+  return { w:d.w, h:d.d }; // top / bottom
+}
+
+/* ============================ POPOVER ============================ */
+function openPopover(anchorEl, renderFn){
+  const pop = document.getElementById('cwePopover');
+  pop.innerHTML='';
+  renderFn(pop);
+  pop.style.display='block';
+  const r = anchorEl.getBoundingClientRect();
+  const w = pop.offsetWidth, h = pop.offsetHeight;
+  pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth-w-8))+'px';
+  pop.style.top = Math.min(r.bottom+8, window.innerHeight-h-8)+'px';
+}
+function closePopover(){ document.getElementById('cwePopover').style.display='none'; }
+document.addEventListener('click', (e)=>{
+  const pop = document.getElementById('cwePopover');
+  if(pop.style.display==='block' && !pop.contains(e.target) && !e.target.closest('.cwe-icon-btn') && !e.target.closest('.cwe-swatch-btn')) closePopover();
+});
+
+/* ============================ CWE BUILDERS ============================ */
+function iconBtn(iconKey, title, onClick, active){
+  const b = document.createElement('button');
+  b.className = 'cwe-icon-btn' + (active ? ' active' : '');
+  b.title = title;
+  b.innerHTML = ICONS[iconKey];
+  b.addEventListener('click', (e)=>{ e.stopPropagation(); onClick(e, b); });
+  return b;
+}
+function group(){ const g = document.createElement('div'); g.className='cwe-group'; return g; }
+
+function paletteRow(current, onPick){
+  const wrap = document.createElement('div');
+  wrap.className = 'cwe-palette';
+  PALETTE.forEach(c=>{
+    const sw = document.createElement('span');
+    sw.style.background = c;
+    if(c.toLowerCase()===String(current).toLowerCase()) sw.classList.add('active');
+    sw.addEventListener('click', ()=>{ onPick(c); renderAll(); closePopover(); });
+    wrap.appendChild(sw);
+  });
+  return wrap;
+}
+
+function layerMenu(){
+  return [
+    { icon:'frontA', label:'Bawa ke Depan', action:()=>reorderSelected('front') },
+    { icon:'forwardA', label:'Naikkan Satu Layer', action:()=>reorderSelected('forward') },
+    { icon:'backA', label:'Turunkan Satu Layer', action:()=>reorderSelected('backward') },
+    { icon:'backA', label:'Kirim ke Belakang', action:()=>reorderSelected('back') },
+  ];
+}
+function alignMenuItems(){
+  const items = [
+    { icon:'alignLeft', label:'Rata Kiri', action:()=>alignSelection('left') },
+    { icon:'alignCenterH', label:'Rata Tengah (H)', action:()=>alignSelection('centerH') },
+    { icon:'alignRight', label:'Rata Kanan', action:()=>alignSelection('right') },
+    { icon:'alignTop', label:'Rata Atas', action:()=>alignSelection('top') },
+    { icon:'alignMiddleV', label:'Rata Tengah (V)', action:()=>alignSelection('middleV') },
+    { icon:'alignBottom', label:'Rata Bawah', action:()=>alignSelection('bottom') },
+  ];
+  if(selection.size>=3){
+    items.push({ icon:'distH', label:'Distribusi Horizontal', action:()=>distributeSelection('h') });
+    items.push({ icon:'distV', label:'Distribusi Vertikal', action:()=>distributeSelection('v') });
+  }
+  return items;
+}
+function renderMenuList(pop, title, items){
+  const t = document.createElement('div'); t.className='pop-title'; t.textContent=title; pop.appendChild(t);
+  items.forEach(it=>{
+    const b = document.createElement('button');
+    b.className='cwe-menu-btn';
+    b.innerHTML = ICONS[it.icon] + '<span>'+it.label+'</span>';
+    b.addEventListener('click', ()=>{ it.action(); closePopover(); });
+    pop.appendChild(b);
+  });
+}
+
+function addDimensionControls(bar, el, panelKey){
+  const g = group();
+  const phys = panelPhysicalDims(panelKey);
+  const wrap = document.createElement('div'); wrap.className='cwe-dim';
+  const wLabel = document.createElement('label'); wLabel.textContent='W';
+  const wInput = document.createElement('input'); wInput.type='number'; wInput.step='0.1';
+  wInput.value = ((el.w/100)*phys.w).toFixed(1);
+  const hLabel = document.createElement('label'); hLabel.textContent='H';
+  const hInput = document.createElement('input'); hInput.type='number'; hInput.step='0.1';
+  hInput.value = ((el.h/100)*phys.h).toFixed(1);
+
+  function applyW(cm){
+    const newW = clamp((cm/phys.w)*100, 4, 100-el.x);
+    if(el.lockAspect){ const ratio = el.h/el.w; el.h = clamp(newW*ratio, 4, 100-el.y); }
+    el.w = newW; renderAll();
+  }
+  function applyH(cm){
+    const newH = clamp((cm/phys.h)*100, 4, 100-el.y);
+    if(el.lockAspect){ const ratio = el.w/el.h; el.w = clamp(newH*ratio, 4, 100-el.x); }
+    el.h = newH; renderAll();
+  }
+  wInput.addEventListener('change', ()=> applyW(parseFloat(wInput.value)||1));
+  hInput.addEventListener('change', ()=> applyH(parseFloat(hInput.value)||1));
+
+  wrap.appendChild(wLabel); wrap.appendChild(wInput);
+  wrap.appendChild(hLabel); wrap.appendChild(hInput);
+  g.appendChild(wrap);
+  g.appendChild(iconBtn('link', el.lockAspect ? 'Rasio terkunci' : 'Kunci rasio ukuran', ()=>{
+    el.lockAspect = !el.lockAspect; renderAll();
+  }, !!el.lockAspect));
+  bar.appendChild(g);
+}
+
+function addLayerAlignControls(bar){
+  const g = group();
+  g.appendChild(iconBtn('layer', 'Layer', (e,btn)=> openPopover(btn, pop=> renderMenuList(pop,'Layer', layerMenu()))));
+  g.appendChild(iconBtn('align', 'Align & Distribusi', (e,btn)=> openPopover(btn, pop=> renderMenuList(pop,'Align', alignMenuItems()))));
+  bar.appendChild(g);
+}
+
+function addUtilityControls(bar, el){
+  const g = group();
+  g.appendChild(iconBtn('opacity', 'Transparansi', (e,btn)=> openPopover(btn, pop=>{
+    const t = document.createElement('div'); t.className='pop-title'; t.textContent='Transparansi'; pop.appendChild(t);
+    const row = document.createElement('div'); row.className='cwe-slider-row';
+    const range = document.createElement('input'); range.type='range'; range.min='10'; range.max='100'; range.value = el.opacity==null?100:el.opacity;
+    const out = document.createElement('output'); out.textContent = range.value+'%';
+    range.addEventListener('input', ()=>{ out.textContent = range.value+'%'; el.opacity = parseInt(range.value,10); renderAll(); });
+    row.appendChild(range); row.appendChild(out); pop.appendChild(row);
+  })));
+  g.appendChild(iconBtn('duplicate', 'Duplikat', ()=> duplicateSelection()));
+  g.appendChild(iconBtn('lock', el.locked ? 'Buka Kunci' : 'Kunci Elemen', ()=>{ el.locked = !el.locked; renderAll(); }, !!el.locked));
+  g.appendChild(iconBtn('trash', 'Hapus', ()=> deleteSelection()));
+  bar.appendChild(g);
+}
+
+function buildShapeImageCWE(bar, el, panelKey){
+  addDimensionControls(bar, el, panelKey);
+
+  if(el.type==='shape'){
+    const g = group();
+    const fillBtn = document.createElement('button'); fillBtn.className='cwe-swatch-btn'; fillBtn.title='Warna isi'; fillBtn.style.background = el.fill;
+    fillBtn.addEventListener('click', ()=> openPopover(fillBtn, pop=>{
+      const t=document.createElement('div'); t.className='pop-title'; t.textContent='Warna Isi'; pop.appendChild(t);
+      pop.appendChild(paletteRow(el.fill, c=> el.fill=c));
+    }));
+    g.appendChild(fillBtn);
+    bar.appendChild(g);
+  }
+
+  const g2 = group();
+  const outlineBtn = document.createElement('button'); outlineBtn.className='cwe-swatch-btn'; outlineBtn.title='Warna outline';
+  outlineBtn.style.background = 'transparent'; outlineBtn.style.borderColor = el.strokeColor || 'rgba(255,255,255,0.5)';
+  outlineBtn.addEventListener('click', ()=> openPopover(outlineBtn, pop=>{
+    const t=document.createElement('div'); t.className='pop-title'; t.textContent='Warna Outline'; pop.appendChild(t);
+    pop.appendChild(paletteRow(el.strokeColor, c=>{ el.strokeColor=c; if(!el.strokeWidth) el.strokeWidth=2; }));
+  }));
+  g2.appendChild(outlineBtn);
+  g2.appendChild(iconBtn('thickness', 'Ketebalan Outline', (e,btn)=> openPopover(btn, pop=>{
+    const t=document.createElement('div'); t.className='pop-title'; t.textContent='Ketebalan Outline'; pop.appendChild(t);
+    const row=document.createElement('div'); row.className='cwe-slider-row';
+    const range=document.createElement('input'); range.type='range'; range.min='0'; range.max='10'; range.value=el.strokeWidth||0;
+    const out=document.createElement('output'); out.textContent=(el.strokeWidth||0)+'px';
+    range.addEventListener('input', ()=>{ out.textContent=range.value+'px'; el.strokeWidth=parseInt(range.value,10); if(!el.strokeColor) el.strokeColor='#171510'; renderAll(); });
+    row.appendChild(range); row.appendChild(out); pop.appendChild(row);
+  })));
+  bar.appendChild(g2);
+
+  addLayerAlignControls(bar);
+  addUtilityControls(bar, el);
+}
+
+function buildTextCWE(bar, el, panelKey){
+  addDimensionControls(bar, el, panelKey);
+
+  const gFont = group();
+  const fontSelect = document.createElement('select'); fontSelect.className='cwe-select';
+  [['Big Shoulders','\'Big Shoulders Display\',sans-serif'],['IBM Plex Sans',"'IBM Plex Sans',sans-serif"],['IBM Plex Mono',"'IBM Plex Mono',monospace"],['Georgia','Georgia,serif'],['Arial','Arial,sans-serif']]
+    .forEach(([label,val])=>{ const o=document.createElement('option'); o.value=val; o.textContent=label; if((el.fontFamily||DEFAULT_FONT)===val) o.selected=true; fontSelect.appendChild(o); });
+  fontSelect.addEventListener('change', ()=>{ el.fontFamily = fontSelect.value; renderAll(); });
+  gFont.appendChild(fontSelect);
+
+  const sizeWrap = document.createElement('div'); sizeWrap.className='cwe-dim';
+  const sizeInput = document.createElement('input'); sizeInput.type='number'; sizeInput.value = el.fontSize||16; sizeInput.title='Ukuran font (px)';
+  sizeInput.addEventListener('change', ()=>{ el.fontSize = clamp(parseInt(sizeInput.value,10)||16, 6, 120); renderAll(); });
+  sizeWrap.appendChild(sizeInput);
+  gFont.appendChild(sizeWrap);
+  bar.appendChild(gFont);
+
+  const gColor = group();
+  const fillBtn = document.createElement('button'); fillBtn.className='cwe-swatch-btn'; fillBtn.title='Warna teks'; fillBtn.style.background = el.color;
+  fillBtn.addEventListener('click', ()=> openPopover(fillBtn, pop=>{
+    const t=document.createElement('div'); t.className='pop-title'; t.textContent='Warna Teks'; pop.appendChild(t);
+    pop.appendChild(paletteRow(el.color, c=> el.color=c));
+  }));
+  gColor.appendChild(fillBtn);
+  const outlineBtn = document.createElement('button'); outlineBtn.className='cwe-swatch-btn'; outlineBtn.title='Warna outline teks';
+  outlineBtn.style.background='transparent'; outlineBtn.style.borderColor = el.strokeColor || 'rgba(255,255,255,0.5)';
+  outlineBtn.addEventListener('click', ()=> openPopover(outlineBtn, pop=>{
+    const t=document.createElement('div'); t.className='pop-title'; t.textContent='Outline Teks'; pop.appendChild(t);
+    pop.appendChild(paletteRow(el.strokeColor, c=>{ el.strokeColor=c; if(!el.strokeWidth) el.strokeWidth=1; }));
+    const row=document.createElement('div'); row.className='cwe-slider-row'; row.style.marginTop='10px';
+    const range=document.createElement('input'); range.type='range'; range.min='0'; range.max='4'; range.value=el.strokeWidth||0;
+    const out=document.createElement('output'); out.textContent=(el.strokeWidth||0)+'px';
+    range.addEventListener('input', ()=>{ out.textContent=range.value+'px'; el.strokeWidth=parseInt(range.value,10); renderAll(); });
+    row.appendChild(range); row.appendChild(out); pop.appendChild(row);
+  }));
+  gColor.appendChild(outlineBtn);
+  bar.appendChild(gColor);
+
+  const gStyle = group();
+  const boldBtn = document.createElement('button'); boldBtn.className='cwe-icon-btn text-glyph'+(el.bold!==false?' active':''); boldBtn.title='Bold'; boldBtn.textContent='B';
+  boldBtn.addEventListener('click', ()=>{ el.bold = el.bold===false ? true : false; renderAll(); });
+  gStyle.appendChild(boldBtn);
+  const italicBtn = document.createElement('button'); italicBtn.className='cwe-icon-btn text-glyph'+(el.italic?' active':''); italicBtn.title='Italic'; italicBtn.style.fontStyle='italic'; italicBtn.textContent='I';
+  italicBtn.addEventListener('click', ()=>{ el.italic = !el.italic; renderAll(); });
+  gStyle.appendChild(italicBtn);
+  const upBtn = document.createElement('button'); upBtn.className='cwe-icon-btn'+(el.uppercase?' active':''); upBtn.title='Uppercase'; upBtn.innerHTML=ICONS.uppercase;
+  upBtn.addEventListener('click', ()=>{ el.uppercase = !el.uppercase; renderAll(); });
+  gStyle.appendChild(upBtn);
+  gStyle.appendChild(iconBtn('spacing', 'Jarak Antar Huruf', (e,btn)=> openPopover(btn, pop=>{
+    const t=document.createElement('div'); t.className='pop-title'; t.textContent='Jarak Huruf'; pop.appendChild(t);
+    const row=document.createElement('div'); row.className='cwe-slider-row';
+    const range=document.createElement('input'); range.type='range'; range.min='-2'; range.max='12'; range.value=el.letterSpacing||0;
+    const out=document.createElement('output'); out.textContent=(el.letterSpacing||0)+'px';
+    range.addEventListener('input', ()=>{ out.textContent=range.value+'px'; el.letterSpacing=parseInt(range.value,10); renderAll(); });
+    row.appendChild(range); row.appendChild(out); pop.appendChild(row);
+  })));
+  bar.appendChild(gStyle);
+
+  const gAlign = group();
+  const align = el.align || 'center';
+  gAlign.appendChild(iconBtn('textLeft', 'Rata Kiri', ()=>{ el.align='left'; renderAll(); }, align==='left'));
+  gAlign.appendChild(iconBtn('textCenter', 'Rata Tengah', ()=>{ el.align='center'; renderAll(); }, align==='center'));
+  gAlign.appendChild(iconBtn('textRight', 'Rata Kanan', ()=>{ el.align='right'; renderAll(); }, align==='right'));
+  bar.appendChild(gAlign);
+
+  addLayerAlignControls(bar);
+  addUtilityControls(bar, el);
+}
+
+function buildMultiCWE(bar){
+  const g = group();
+  const badge = document.createElement('span'); badge.className='cwe-multi-badge'; badge.textContent = selection.size+' elemen dipilih';
+  g.appendChild(badge);
+  bar.appendChild(g);
+  addLayerAlignControls(bar);
+  const g2 = group();
+  g2.appendChild(iconBtn('duplicate', 'Duplikat', ()=> duplicateSelection()));
+  g2.appendChild(iconBtn('trash', 'Hapus', ()=> deleteSelection()));
+  bar.appendChild(g2);
+}
+
+function updateCWE(){
+  const bar = document.getElementById('cweBar');
+  bar.innerHTML='';
+  if(selection.size===0){
+    bar.classList.add('empty');
+    const hint = document.createElement('span'); hint.className='cwe-hint';
+    hint.textContent = 'Pilih elemen di kanvas untuk menampilkan opsi cepat di sini.';
+    bar.appendChild(hint);
+    return;
+  }
+  bar.classList.remove('empty');
+  const selEls = Array.from(selection).map(id=>findElement(id)).filter(Boolean).map(f=>f.el);
+  const allLocked = selEls.length>0 && selEls.every(el=>el.locked);
+  if(allLocked){ buildLockedOnlyCWE(bar, selEls); return; }
+  if(selection.size > 1){ buildMultiCWE(bar); return; }
+  const found = findElement(Array.from(selection)[0]);
+  if(!found){ bar.classList.add('empty'); return; }
+  if(found.el.type==='text') buildTextCWE(bar, found.el, found.panelKey);
+  else buildShapeImageCWE(bar, found.el, found.panelKey);
+}
+
+function buildLockedOnlyCWE(bar, elems){
+  const g = group();
+  const badge = document.createElement('span'); badge.className='cwe-multi-badge';
+  badge.textContent = elems.length>1 ? elems.length+' elemen terkunci' : 'Elemen terkunci';
+  g.appendChild(badge);
+  bar.appendChild(g);
+  const g2 = group();
+  g2.appendChild(iconBtn('unlock', 'Buka Kunci', ()=>{ elems.forEach(el=> el.locked=false); renderAll(); }));
+  bar.appendChild(g2);
+}
+
+/* ============================ DRAG / RESIZE (cross-panel) ============================ */
+function startDrag(e, el, node, homePanelKey){
+  if(e.target.classList.contains('resize-handle')) return;
+  if(el.locked){
+    e.preventDefault();
+    if(e.shiftKey) toggleSelect(el.id, homePanelKey);
+    else selectOnly(el.id, homePanelKey);
+    return;
+  }
+  e.preventDefault();
+  const shiftHeld = e.shiftKey;
+
+  let currentPanelKey = homePanelKey;
+  let container = node.parentElement;
+  let rect = container.getBoundingClientRect();
+  let startX = e.clientX, startY = e.clientY;
+  let startLeft = el.x, startTop = el.y;
+  let moved = false;
+  node.style.cursor = 'grabbing';
+  node.style.zIndex = 999;
+
+  function move(ev){
+    moved = true;
+    node.style.pointerEvents = 'none';
+    const under = document.elementFromPoint(ev.clientX, ev.clientY);
+    node.style.pointerEvents = '';
+    const targetCanvas = under ? under.closest('.panel-canvas') : null;
+
+    if(targetCanvas && targetCanvas.dataset.panel !== currentPanelKey){
+      const newKey = targetCanvas.dataset.panel;
+      panels[currentPanelKey].elements = panels[currentPanelKey].elements.filter(e2=>e2.id!==el.id);
+      panels[newKey].elements.push(el);
+      currentPanelKey = newKey;
+      targetCanvas.appendChild(node);
+      container = targetCanvas;
+      rect = container.getBoundingClientRect();
+      const relX = ((ev.clientX-rect.left)/rect.width)*100 - el.w/2;
+      const relY = ((ev.clientY-rect.top)/rect.height)*100 - el.h/2;
+      el.x = clamp(relX, 0, 100-el.w); el.y = clamp(relY, 0, 100-el.h);
+      node.style.left = el.x+'%'; node.style.top = el.y+'%';
+      selectedPanel = newKey;
+      updatePanelUI();
+      startX = ev.clientX; startY = ev.clientY;
+      startLeft = el.x; startTop = el.y;
+      return;
+    }
+    const dxPct = ((ev.clientX-startX)/rect.width)*100;
+    const dyPct = ((ev.clientY-startY)/rect.height)*100;
+    el.x = clamp(startLeft+dxPct, 0, 100-el.w);
+    el.y = clamp(startTop+dyPct, 0, 100-el.h);
+    node.style.left = el.x+'%'; node.style.top = el.y+'%';
+  }
+  function up(){
+    node.style.cursor='grab';
+    window.removeEventListener('pointermove', move);
+    window.removeEventListener('pointerup', up);
+    if(shiftHeld && !moved){
+      toggleSelect(el.id, currentPanelKey);
+    } else {
+      selectOnly(el.id, currentPanelKey);
+    }
+  }
+  window.addEventListener('pointermove', move);
+  window.addEventListener('pointerup', up);
+}
+
+function startResize(e, el, node){
+  if(el.locked) return;
+  e.preventDefault();
+  const container = node.parentElement;
+  const rect = container.getBoundingClientRect();
+  const startX = e.clientX, startY = e.clientY;
+  const startW = el.w, startH = el.h;
+  const ratio = startH / startW;
+  function move(ev){
+    const dwPct = ((ev.clientX-startX)/rect.width)*100;
+    const dhPct = ((ev.clientY-startY)/rect.height)*100;
+    let newW = clamp(startW+dwPct, 8, 100-el.x);
+    let newH = clamp(startH+dhPct, 8, 100-el.y);
+    if(el.lockAspect){ newH = clamp(newW*ratio, 8, 100-el.y); }
+    el.w = newW; el.h = newH;
+    node.style.width = el.w+'%'; node.style.height = el.h+'%';
+  }
+  function up(){
+    window.removeEventListener('pointermove', move);
+    window.removeEventListener('pointerup', up);
+    renderAll();
+  }
+  window.addEventListener('pointermove', move);
+  window.addEventListener('pointerup', up);
+}
+
+function editTextInline(el, node){
+  node.innerHTML='';
+  const input = document.createElement('input');
+  input.type='text'; input.value = el.text; input.className='inline-edit-input';
+  input.style.fontSize = cqw(el.fontSize||16); input.style.color = el.color;
+  input.style.fontFamily = el.fontFamily || DEFAULT_FONT;
+  input.style.fontWeight = el.bold===false ? '400' : '800';
+  input.style.fontStyle = el.italic ? 'italic' : 'normal';
+  node.appendChild(input); input.focus(); input.select();
+  input.addEventListener('click', e=>e.stopPropagation());
+  input.addEventListener('pointerdown', e=>e.stopPropagation());
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter') input.blur(); e.stopPropagation(); });
+  input.addEventListener('blur', ()=>{ el.text = input.value || 'Teks'; renderAll(); });
+}
+
+/* ============================ LAYER ORDER / DUPLICATE / DELETE ============================ */
+function reorderSelected(action){
+  if(!lastSelectedId) return;
+  const found = findElement(lastSelectedId); if(!found) return;
+  const arr = panels[found.panelKey].elements;
+  const idx = arr.findIndex(e=>e.id===lastSelectedId);
+  if(action==='front'){ arr.push(arr.splice(idx,1)[0]); }
+  if(action==='back'){ arr.unshift(arr.splice(idx,1)[0]); }
+  if(action==='forward' && idx<arr.length-1){ [arr[idx],arr[idx+1]]=[arr[idx+1],arr[idx]]; }
+  if(action==='backward' && idx>0){ [arr[idx],arr[idx-1]]=[arr[idx-1],arr[idx]]; }
+  renderAll();
+}
+function duplicateSelection(){
+  const ids = Array.from(selection);
+  if(ids.length===0) return;
+  const newIds = [];
+  ids.forEach(id=>{
+    const found = findElement(id); if(!found) return;
+    const clone = JSON.parse(JSON.stringify(found.el));
+    clone.id = uid();
+    clone.x = clamp(clone.x+4, 0, 100-clone.w);
+    clone.y = clamp(clone.y+4, 0, 100-clone.h);
+    panels[found.panelKey].elements.push(clone);
+    newIds.push(clone.id);
+  });
+  selection = new Set(newIds);
+  lastSelectedId = newIds[newIds.length-1];
+  renderAll();
+}
+function deleteSelection(){
+  const remaining = new Set();
+  selection.forEach(id=>{
+    const found = findElement(id);
+    if(!found) return;
+    if(found.el.locked){ remaining.add(id); return; }
+    panels[found.panelKey].elements = panels[found.panelKey].elements.filter(e=>e.id!==id);
+  });
+  selection = remaining;
+  lastSelectedId = remaining.size ? Array.from(remaining)[0] : null;
+  renderAll();
+}
+function copySelection(){
+  clipboard = Array.from(selection).map(id=>{
+    const found = findElement(id);
+    return found ? JSON.parse(JSON.stringify(found.el)) : null;
+  }).filter(Boolean);
+}
+function pasteClipboard(targetPanelKey){
+  if(clipboard.length===0) return;
+  const newIds = [];
+  clipboard.forEach(clip=>{
+    const clone = JSON.parse(JSON.stringify(clip));
+    clone.id = uid();
+    clone.x = clamp(clone.x+4, 0, 100-clone.w);
+    clone.y = clamp(clone.y+4, 0, 100-clone.h);
+    panels[targetPanelKey].elements.push(clone);
+    newIds.push(clone.id);
+  });
+  selection = new Set(newIds);
+  lastSelectedId = newIds[newIds.length-1];
+  selectedPanel = targetPanelKey;
+  renderAll();
+}
+
+/* ============================ ALIGN / DISTRIBUTE ============================ */
+function alignSelection(mode){
+  const ids = Array.from(selection);
+  if(ids.length===0) return;
+  const elems = ids.map(id=>findElement(id).el);
+  if(elems.length===1){
+    const el = elems[0];
+    if(mode==='left') el.x=0;
+    if(mode==='right') el.x=100-el.w;
+    if(mode==='centerH') el.x=(100-el.w)/2;
+    if(mode==='top') el.y=0;
+    if(mode==='bottom') el.y=100-el.h;
+    if(mode==='middleV') el.y=(100-el.h)/2;
+  } else {
+    const minX = Math.min(...elems.map(e=>e.x));
+    const maxX = Math.max(...elems.map(e=>e.x+e.w));
+    const minY = Math.min(...elems.map(e=>e.y));
+    const maxY = Math.max(...elems.map(e=>e.y+e.h));
+    elems.forEach(el=>{
+      if(mode==='left') el.x=minX;
+      if(mode==='right') el.x=maxX-el.w;
+      if(mode==='centerH') el.x=(minX+maxX)/2 - el.w/2;
+      if(mode==='top') el.y=minY;
+      if(mode==='bottom') el.y=maxY-el.h;
+      if(mode==='middleV') el.y=(minY+maxY)/2 - el.h/2;
+    });
+  }
+  renderAll();
+}
+function distributeSelection(axis){
+  const ids = Array.from(selection);
+  if(ids.length<3) return;
+  const elems = ids.map(id=>findElement(id).el);
+  if(axis==='h'){
+    elems.sort((a,b)=>a.x-b.x);
+    const firstCenter = elems[0].x + elems[0].w/2;
+    const lastCenter = elems[elems.length-1].x + elems[elems.length-1].w/2;
+    const step = (lastCenter-firstCenter)/(elems.length-1);
+    elems.forEach((el,i)=>{ const c=firstCenter+step*i; el.x = clamp(c-el.w/2,0,100-el.w); });
+  } else {
+    elems.sort((a,b)=>a.y-b.y);
+    const firstCenter = elems[0].y + elems[0].h/2;
+    const lastCenter = elems[elems.length-1].y + elems[elems.length-1].h/2;
+    const step = (lastCenter-firstCenter)/(elems.length-1);
+    elems.forEach((el,i)=>{ const c=firstCenter+step*i; el.y = clamp(c-el.h/2,0,100-el.h); });
+  }
+  renderAll();
+}
+
+/* ============================ CONTEXT MENU ============================ */
+function showContextMenu(x, y, items){
+  const menu = document.getElementById('contextMenu');
+  menu.innerHTML='';
+  items.forEach(item=>{
+    if(item==='sep'){ const hr=document.createElement('div'); hr.className='cm-sep'; menu.appendChild(hr); return; }
+    if(item.header){ const h=document.createElement('div'); h.className='cm-header'; h.textContent=item.header; menu.appendChild(h); return; }
+    const btn=document.createElement('button');
+    btn.className='cm-item'; btn.disabled = !!item.disabled;
+    const label = document.createElement('span'); label.textContent = item.label;
+    btn.appendChild(label);
+    if(item.shortcut){ const sc=document.createElement('span'); sc.className='cm-shortcut'; sc.textContent=item.shortcut; btn.appendChild(sc); }
+    btn.addEventListener('click', ()=>{ hideContextMenu(); if(item.action) item.action(); });
+    menu.appendChild(btn);
+  });
+  menu.style.display='block';
+  const menuW = menu.offsetWidth, menuH = menu.offsetHeight;
+  menu.style.left = Math.min(x, window.innerWidth-menuW-8)+'px';
+  menu.style.top = Math.min(y, window.innerHeight-menuH-8)+'px';
+}
+function hideContextMenu(){ document.getElementById('contextMenu').style.display='none'; }
+document.addEventListener('click', hideContextMenu);
+window.addEventListener('scroll', hideContextMenu, true);
+
+function openElementContextMenu(x, y){
+  const n = selection.size;
+  const selEls = Array.from(selection).map(id=>findElement(id)).filter(Boolean).map(f=>f.el);
+  const allLocked = selEls.length>0 && selEls.every(el=>el.locked);
+  if(allLocked){
+    showContextMenu(x, y, [
+      { label:'Buka Kunci', action:()=>{ selEls.forEach(el=> el.locked=false); renderAll(); } }
+    ]);
+    return;
+  }
+  const items = [
+    {header:'LAYER'},
+    {label:'Bawa ke Depan', action:()=>reorderSelected('front')},
+    {label:'Naikkan Satu Layer', action:()=>reorderSelected('forward')},
+    {label:'Turunkan Satu Layer', action:()=>reorderSelected('backward')},
+    {label:'Kirim ke Belakang', action:()=>reorderSelected('back')},
+    'sep',
+    {label:'Duplikat', shortcut:'Ctrl+D', action:duplicateSelection},
+    {label:'Salin', shortcut:'Ctrl+C', action:copySelection},
+    {label:'Hapus', shortcut:'Del', action:deleteSelection},
+    'sep',
+    {header:'ALIGN'},
+    {label:'Rata Kiri', action:()=>alignSelection('left')},
+    {label:'Rata Tengah (Horizontal)', action:()=>alignSelection('centerH')},
+    {label:'Rata Kanan', action:()=>alignSelection('right')},
+    {label:'Rata Atas', action:()=>alignSelection('top')},
+    {label:'Rata Tengah (Vertikal)', action:()=>alignSelection('middleV')},
+    {label:'Rata Bawah', action:()=>alignSelection('bottom')},
+  ];
+  if(n>=3){
+    items.push('sep');
+    items.push({label:'Distribusi Horizontal', action:()=>distributeSelection('h')});
+    items.push({label:'Distribusi Vertikal', action:()=>distributeSelection('v')});
+  }
+  showContextMenu(x, y, items);
+}
+function openPastePanelMenu(x, y, panelKey){
+  showContextMenu(x, y, [
+    { label: clipboard.length ? 'Tempel di sini (Ctrl+V)' : 'Tempel (clipboard kosong)', disabled: clipboard.length===0, action:()=>pasteClipboard(panelKey) }
+  ]);
+}
+
+/* ============================ KEYBOARD SHORTCUTS ============================ */
+document.addEventListener('keydown', (e)=>{
+  const tag = document.activeElement.tagName;
+  const editing = tag==='INPUT' || tag==='TEXTAREA' || document.activeElement.isContentEditable;
+  if(editing) return;
+  if(e.key==='Delete' || e.key==='Backspace'){ if(selection.size){ e.preventDefault(); deleteSelection(); } }
+  else if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='c'){ e.preventDefault(); copySelection(); }
+  else if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='v'){ e.preventDefault(); pasteClipboard(selectedPanel); }
+  else if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='d'){ e.preventDefault(); duplicateSelection(); }
+});
+
+/* ============================ SIDEBAR DRAWERS ============================ */
+document.querySelectorAll('.ed-nav-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.ed-nav-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const target = btn.dataset.drawer;
+    document.querySelectorAll('.drawer-section').forEach(sec=>{
+      sec.style.display = (sec.dataset.section===target) ? 'block' : 'none';
+    });
+  });
+});
+
+/* ---- config: type / size / qty ---- */
+document.getElementById('typeSeg').querySelectorAll('button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.getElementById('typeSeg').querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    box.type = btn.dataset.type; box.basePrice = parseInt(btn.dataset.price,10);
+    document.getElementById('editorSubtitle').textContent = TYPE_LABEL[box.type];
+    rebuildSizeDimsForType();
+    refreshSizeOptionsUI();
+    updateConfigHint();
+    if(box.type==='tray' && selectedPanel==='top'){ selectedPanel='front'; selection=new Set(); lastSelectedId=null; }
+    renderAll();
+  });
+});
+/* ---- config: size (standard dropdown + custom steppers) ---- */
+function clampCustomDim(v){ return clamp(Math.round(v), 8, 80); }
+function applyCustomSize(){
+  const wInput = document.getElementById('customW');
+  const dInput = document.getElementById('customD');
+  const hInput = document.getElementById('customH');
+  const w = clampCustomDim(parseInt(wInput.value,10) || 25);
+  const d = clampCustomDim(parseInt(dInput.value,10) || 20);
+  const h = clampCustomDim(parseInt(hInput.value,10) || 12);
+  wInput.value = w; dInput.value = d; hInput.value = h;
+  SIZE_DIMS.CUSTOM = { w, d, h };
+  SIZE_LABEL.CUSTOM = `${w}×${d}×${h}`;
+  const baseVolume = SIZE_DIMS.M.w * SIZE_DIMS.M.d * SIZE_DIMS.M.h;
+  const mult = (w*d*h) / baseVolume;
+  box.size = 'CUSTOM';
+  box.mult = clamp(mult, 0.4, 4);
+  renderAll();
+}
+document.querySelectorAll('.stepper-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const dim = btn.dataset.dim; const dir = parseInt(btn.dataset.dir,10);
+    const input = document.getElementById('custom'+dim.toUpperCase());
+    const v = clampCustomDim((parseInt(input.value,10)||0) + dir);
+    input.value = v;
+    applyCustomSize();
+  });
+});
+['customW','customD','customH'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', applyCustomSize);
+});
+
+document.querySelectorAll('.size-tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.size-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const target = tab.dataset.tab;
+    document.getElementById('sizeStandardPanel').style.display = target==='standard' ? 'block' : 'none';
+    document.getElementById('sizeCustomPanel').style.display = target==='custom' ? 'block' : 'none';
+    if(target==='custom'){
+      applyCustomSize();
+    } else {
+      const activeOpt = document.querySelector('.size-option.active') || document.querySelector('.size-option');
+      box.size = activeOpt.dataset.size; box.mult = parseFloat(activeOpt.dataset.mult);
+      renderAll();
+    }
+  });
+});
+
+(function initSizeSelect(){
+  const btn = document.getElementById('sizeSelectBtn');
+  const dropdown = document.getElementById('sizeSelectDropdown');
+  const label = document.getElementById('sizeSelectLabel');
+  btn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    dropdown.classList.toggle('open');
+    btn.classList.toggle('open', dropdown.classList.contains('open'));
+  });
+  document.addEventListener('click', (e)=>{
+    if(dropdown.classList.contains('open') && !dropdown.contains(e.target) && e.target!==btn){
+      dropdown.classList.remove('open'); btn.classList.remove('open');
+    }
+  });
+  dropdown.querySelectorAll('.size-option').forEach(opt=>{
+    opt.addEventListener('click', ()=>{
+      dropdown.querySelectorAll('.size-option').forEach(o=>o.classList.remove('active'));
+      opt.classList.add('active');
+      label.textContent = opt.textContent;
+      box.size = opt.dataset.size; box.mult = parseFloat(opt.dataset.mult);
+      dropdown.classList.remove('open'); btn.classList.remove('open');
+      renderAll();
+    });
+  });
+})();
+
+const qtyInput = document.getElementById('qtyInput');
+document.getElementById('qtyMinus').addEventListener('click', ()=>{ box.qty = Math.max(50, box.qty-50); qtyInput.value=box.qty; renderAll(); });
+document.getElementById('qtyPlus').addEventListener('click', ()=>{ box.qty = box.qty+50; qtyInput.value=box.qty; renderAll(); });
+qtyInput.addEventListener('change', ()=>{
+  let v = parseInt(qtyInput.value.replace(/[^0-9]/g,''),10) || 50;
+  v = Math.max(50, v); box.qty = v; qtyInput.value=v; renderAll();
+});
+
+/* ---- uploads ---- */
+const uploadBox = document.getElementById('uploadBox');
+const logoInput = document.getElementById('logoInput');
+uploadBox.addEventListener('click', ()=> logoInput.click());
+logoInput.addEventListener('change', (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    uploadedImages.push({ id: uid(), src: ev.target.result });
+    renderUploadThumbs();
+  };
+  reader.readAsDataURL(file);
+});
+function renderUploadThumbs(){
+  const wrap = document.getElementById('uploadThumbs');
+  wrap.innerHTML='';
+  uploadedImages.forEach(img=>{
+    const b = document.createElement('button');
+    const im = document.createElement('img'); im.src = img.src; b.appendChild(im);
+    b.addEventListener('click', ()=>{
+      panels[selectedPanel].elements.push({ id: uid(), type:'image', x:25, y:25, w:50, h:50, src: img.src });
+      renderAll();
+    });
+    wrap.appendChild(b);
+  });
+}
+
+/* ---- text / shapes ---- */
+document.getElementById('addTextBtn').addEventListener('click', ()=>{
+  const newEl = { id: uid(), type:'text', x:15, y:40, w:70, h:20, text:'Teks Baru', color:'#171510', fontSize:16, fontFamily:DEFAULT_FONT, bold:true, italic:false };
+  panels[selectedPanel].elements.push(newEl);
+  selection = new Set([newEl.id]); lastSelectedId = newEl.id;
+  renderAll();
+});
+document.getElementById('addRectBtn').addEventListener('click', ()=>{
+  const newEl = { id: uid(), type:'shape', shape:'rect', x:30, y:30, w:30, h:22, fill:'#00AEEF' };
+  panels[selectedPanel].elements.push(newEl);
+  selection = new Set([newEl.id]); lastSelectedId = newEl.id;
+  renderAll();
+});
+document.getElementById('addCircleBtn').addEventListener('click', ()=>{
+  const newEl = { id: uid(), type:'shape', shape:'circle', x:35, y:30, w:26, h:26, fill:'#EC1E79' };
+  panels[selectedPanel].elements.push(newEl);
+  selection = new Set([newEl.id]); lastSelectedId = newEl.id;
+  renderAll();
+});
+
+/* ---- base color ---- */
+document.querySelectorAll('#colorSwatches .swatch').forEach(sw=>{
+  sw.addEventListener('click', ()=>{
+    document.querySelectorAll('#colorSwatches .swatch').forEach(s=>s.classList.remove('active'));
+    sw.classList.add('active');
+    boxColor = sw.dataset.color;
+    renderAll();
+  });
+});
+
+/* drag to rotate 3D box */
+(function enableDrag(){
+  const box3d = document.getElementById('box3d');
+  const stage = document.getElementById('previewStage3d');
+  let dragging=false, lastX=0, lastY=0;
+  stage.addEventListener('pointerdown', (e)=>{
+    if(e.target.closest('.panel-el')) return;
+    dragging=true; lastX=e.clientX; lastY=e.clientY;
+    box3d.style.transition = 'none'; // manual drag overrides any in-flight snap animation
+  });
+  window.addEventListener('pointerup', ()=> dragging=false);
+  window.addEventListener('pointermove', (e)=>{
+    if(!dragging) return;
+    const dx=e.clientX-lastX, dy=e.clientY-lastY;
+    boxRotY += dx*0.4; boxRotX = clamp(boxRotX - dy*0.4, -60, 60);
+    box3d.style.transform = `rotateX(${boxRotX}deg) rotateY(${boxRotY}deg)`;
+    lastX=e.clientX; lastY=e.clientY;
+  });
+  applyBoxRotation(false); // set initial angle from shared state
+})();
+
+/* ============================ GEOMETRY (flat dieline + 3D preview) ============================
+   Single source of truth: SIZE_DIMS[box.size] = {w,d,h} in cm (real, editable dimensions).
+   Both the flat dieline grid and the 3D box are recomputed from these exact numbers on every
+   render, so a change to the size (standard pick or custom stepper) updates every view at once,
+   with no separate "display size" that can drift out of sync with the real dimensions. */
+
+/* Flat dieline: panel cross layout is
+     .    top    .    .
+     left front  right back
+     .    bottom .    .
+   column widths = [D, W, D, D] (left, front, right, back)
+   row heights    = [D, H, D]   (top, front, bottom)
+   Using cm values directly as fr-units makes every panel cell exactly proportional
+   to its real physical size — a 2x wider panel is exactly 2x wider on screen. */
+function updateFlatGridProportions(dims){
+  const { w, d, h } = dims;
+  const grid = document.getElementById('flatGrid');
+  const noTop = box.type === 'tray'; // no lid → no TOP row in the dieline at all
+  grid.classList.toggle('no-top', noTop);
+  grid.style.gridTemplateColumns = `${d}fr ${w}fr ${d}fr ${d}fr`;
+  const totalW = w + 3*d; // left + front + right + back
+  if(noTop){
+    grid.style.gridTemplateRows = `${h}fr ${d}fr`;
+    grid.style.aspectRatio = `${totalW} / ${h + d}`;
+  } else {
+    grid.style.gridTemplateRows = `${d}fr ${h}fr ${d}fr`;
+    grid.style.aspectRatio = `${totalW} / ${h + 2*d}`;
+  }
+}
+
+/* 3D preview: classic CSS cube, but every face's width/height/offset/translateZ is derived
+   from the real W (bw) / D (bd) / H (bh) in cm, scaled uniformly to px so proportions stay
+   exact. Each face is centered on the container's center before rotate+translateZ, which is
+   the geometrically correct way to build a cube of unequal edge lengths (not a fixed-size
+   mock). Uniform scale = one dimension can never look "right" while another looks "wrong". */
+function updateBox3DGeometry(dims){
+  const { w, d, h } = dims;
+  const FIT_PX = 165; // the box's longest real edge maps to this many px
+  const scale = FIT_PX / Math.max(w, d, h);
+  const bw = w*scale, bd = d*scale, bh = h*scale;
+
+  const box3d = document.getElementById('box3d');
+  box3d.dataset.type = box.type;
+  box3d.style.width = bw + 'px';
+  box3d.style.height = bh + 'px';
+
+  function setFace(face, fw, fh, left, top, transform){
+    const el = document.querySelector(`.face[data-face="${face}"]`);
+    el.style.width = fw + 'px';
+    el.style.height = fh + 'px';
+    el.style.left = left + 'px';
+    el.style.top = top + 'px';
+    el.style.transform = transform;
+  }
+  setFace('front',  bw, bh, 0,        0,          `translateZ(${bd/2}px)`);
+  setFace('back',   bw, bh, 0,        0,          `translateZ(${-bd/2}px) rotateY(180deg)`);
+  setFace('right',  bd, bh, (bw-bd)/2, 0,          `rotateY(90deg) translateZ(${bw/2}px)`);
+  setFace('left',   bd, bh, (bw-bd)/2, 0,          `rotateY(-90deg) translateZ(${bw/2}px)`);
+
+  /* Bottom ("alas") is shrunk to match where the tapered walls actually
+     converge, instead of sitting full-size under them. The ratios mirror
+     each type's wall clip-path in style.css: box/burger walls taper to
+     76%/56% of full width, tray to 68%/36%, bakery stays square-cut
+     (100%/100%) since its walls don't taper. Centered so it still lines
+     up under the box regardless of size. */
+  const BOTTOM_TAPER = {
+    box:    { w:0.76, d:0.56 },
+    burger: { w:0.76, d:0.56 },
+    tray:   { w:0.68, d:0.36 },
+    bakery: { w:1,    d:1    }
+  };
+  const taper = BOTTOM_TAPER[box.type] || { w:1, d:1 };
+  const bwBottom = bw * taper.w, bdBottom = bd * taper.d;
+  setFace('bottom', bwBottom, bdBottom, (bw-bwBottom)/2, (bh-bd)/2 + (bd-bdBottom)/2, `rotateX(-90deg) translateZ(${bh/2}px)`);
+
+  /* The lid/top face behaves differently per packaging category:
+     - Terra Box / Terra Burger are hinged clamshells — real dielines print
+       the lid as one continuous piece with the base, and product shots
+       always show them ajar so the inside is visible. We lift the top
+       face straight up and back off the box (no risky edge-hinge rotation
+       math) so it reads clearly as an open lid, matching the reference
+       product photography.
+     - Terra Bakery is a tuck-flap box — top face stays seated closed,
+       flaps visible, same as before.
+     - Terra Tray has no lid at all — the top face is hidden entirely and
+       the dieline panel for it is disabled (see updateFlatGridProportions). */
+  /* The lid/top face behaves differently per packaging category:
+     - Terra Box / Terra Burger are hinged clamshells — the lid is one
+       continuous piece with the base, folded at the BACK edge. We swing
+       #lidHinge open around that exact fold line (its transform-origin is
+       pinned to the box's real back-top-rim, in 3D space, below) so the
+       lid stays visibly attached at the hinge, matching how product shots
+       show it propped ajar — instead of the old translate-it-away hack
+       that made it read as a separate floating piece.
+     - Terra Bakery is a tuck-flap box — top face stays seated closed,
+       flaps visible, same as before.
+     - Terra Tray has no lid at all — the top face is hidden entirely and
+       the dieline panel for it is disabled (see updateFlatGridProportions). */
+  const topFace = document.querySelector('.face[data-face="top"]');
+  const lidHinge = document.getElementById('lidHinge');
+  const isTray = box.type === 'tray';
+  const isClamshell = box.type === 'box' || box.type === 'burger';
+  const isBakery = box.type === 'bakery';
+
+  topFace.style.display = isTray ? 'none' : '';
+  if(!isTray){
+    setFace('top', bw, bd, 0, (bh-bd)/2, `rotateX(90deg) translateZ(${bh/2}px)`);
+    /* Pivot the hinge exactly on the box's back-top edge: Y=0 (top rim) and
+       Z=-bd/2 (back wall plane) in the box's own coordinate frame — the
+       x-offset doesn't matter for a rotation about the X axis. */
+    lidHinge.style.transformOrigin = `50% 0% ${-(bd/2)}px`;
+    lidHinge.style.transform = isClamshell ? 'rotateX(110deg)' : 'rotateX(0deg)';
+  }
+
+  const flapW = Math.max(18, bw*0.36);
+  const flapH = Math.max(14, bd*0.62);
+  topFace.querySelectorAll('.flap').forEach(f=>{
+    f.style.display = isBakery ? '' : 'none';
+    f.style.width = flapW+'px'; f.style.height = flapH+'px'; f.style.top = -(flapH-2)+'px';
+  });
+}
+
+/* Rebuilds the blurred/unclickable "unsafe area" strips on the flat dieline
+   panels whenever the box type changes. Only front/back/left/right carry a
+   margin (the vertical walls that taper in 3D) — top/bottom stay fully
+   editable. Rebuilding from scratch each call keeps this in sync with
+   SIDE_MARGIN with no leftover strips from a previous type. */
+function updateSafeAreaOverlays(){
+  const cfg = SIDE_MARGIN[box.type] || {};
+  ['front','back','left','right'].forEach(panel=>{
+    const cell = document.querySelector(`.panel-cell[data-panel="${panel}"]`);
+    const old = cell.querySelector('.unsafe-overlay');
+    if(old) old.remove();
+    const pct = cfg[panel] || 0;
+    if(pct <= 0) return;
+    const ov = document.createElement('div');
+    ov.className = 'unsafe-overlay';
+    ['unsafe-l','unsafe-r'].forEach(side=>{
+      const strip = document.createElement('div');
+      strip.className = 'unsafe-strip ' + side;
+      /* Mirrors the .box3d[data-type] face clip-path exactly: that polygon
+         keeps the top edge full-width (0%–100%) and narrows only the bottom
+         edge inward by `pct` on each side, so the unsafe wedge is a
+         triangle — nothing at the top edge, full `pct` margin at the
+         bottom — not a constant-width column. */
+      strip.style.clipPath = side==='unsafe-l'
+        ? `polygon(0% 0%, 0% 100%, ${pct}% 100%)`
+        : `polygon(100% 0%, 100% 100%, ${100-pct}% 100%)`;
+      strip.title = 'Area ini menyempit di bentuk 3D — bukan area cetak yang aman.';
+      const label = document.createElement('span');
+      label.textContent = 'AREA TIDAK AMAN';
+      strip.appendChild(label);
+      ['pointerdown','click','dblclick'].forEach(evt=>{
+        strip.addEventListener(evt, e=>{ e.stopPropagation(); e.preventDefault(); });
+      });
+      ov.appendChild(strip);
+    });
+    cell.appendChild(ov);
+  });
+}
+
+/* ============================ PRICE ============================ */
+function discountTier(qty){ if(qty>=5000) return 0.30; if(qty>=1000) return 0.20; if(qty>=500) return 0.10; return 0; }
+function formatRp(n){ return 'Rp ' + Math.round(n).toLocaleString('id-ID'); }
+function updatePrice(){
+  const unit = box.basePrice * box.mult;
+  const discount = discountTier(box.qty);
+  const total = unit * box.qty * (1-discount);
+  document.getElementById('priceOut').innerHTML = formatRp(total) + `<span>Total estimasi (${box.qty} pcs)</span>`;
+  document.getElementById('unitPriceOut').textContent = '≈ ' + formatRp(unit*(1-discount)) + ' / pcs';
+  document.getElementById('discountOut').textContent = discount>0 ? `Diskon volume ${Math.round(discount*100)}% diterapkan` : '';
+  document.getElementById('specOut').textContent = `${TYPE_LABEL[box.type].toUpperCase()} · ${box.size==='CUSTOM'?'CUSTOM':box.size} · ${SIZE_LABEL[box.size]}CM`;
+  const dims = SIZE_DIMS[box.size];
+  document.getElementById('dimW').textContent = dims.w;
+  document.getElementById('dimH').textContent = dims.h;
+  document.getElementById('dimD').textContent = dims.d;
+  updateFlatGridProportions(dims);
+  updateBox3DGeometry(dims);
+  updateSafeAreaOverlays();
+}
+
+document.getElementById('quoteBtn').addEventListener('click', async ()=>{
+  const quoteMsg = document.getElementById('quoteMsg');
+  if(!currentUser){
+    quoteMsg.textContent = 'Masuk dulu lewat halaman utama untuk mengirim permintaan penawaran.';
+    return;
+  }
+  quoteMsg.textContent = 'Mengirim permintaan…';
+
+  // Pastikan desain sudah tersimpan supaya order bisa menaut ke design_id
+  await saveDesign(false);
+
+  const unit = box.basePrice * box.mult;
+  const discount = discountTier(box.qty);
+  const total = unit * box.qty * (1 - discount);
+  const productType = productTypeMap[box.type];
+
+  const { data, error } = await supabase.from('orders').insert({
+    order_no: 'TND-' + Date.now(),
+    user_id: currentUser.id,
+    design_id: currentDesignId,
+    product_type_id: productType ? productType.id : null,
+    size_code: box.size,
+    custom_dimensions: box.size === 'CUSTOM' ? SIZE_DIMS.CUSTOM : null,
+    quantity: box.qty,
+    unit_price: unit,
+    discount_pct: discount * 100,
+    total_price: total,
+    status: 'awaiting_proof'
+  }).select().single();
+
+  if(error){
+    quoteMsg.textContent = 'Gagal mengirim permintaan: ' + error.message;
+    return;
+  }
+  quoteMsg.textContent = `✓ Permintaan tercatat sebagai pesanan ${data.order_no}. Tim kami akan kirim proof desain ke email kamu.`;
+});
+
+/* ============================ TOAST (generic demo feedback) ============================ */
+function showToast(msg){
+  let toast = document.getElementById('appToast');
+  if(!toast){
+    toast = document.createElement('div');
+    toast.id = 'appToast';
+    toast.className = 'app-toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.classList.remove('show');
+  void toast.offsetWidth;
+  toast.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(()=> toast.classList.remove('show'), 2600);
+}
+
+/* ============================ FILE MENU (dropdown) ============================ */
+(function initFileMenu(){
+  const btn = document.getElementById('fileMenuBtn');
+  const dropdown = document.getElementById('fileMenuDropdown');
+  btn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    dropdown.classList.toggle('open');
+    btn.classList.toggle('open', dropdown.classList.contains('open'));
+  });
+  document.addEventListener('click', (e)=>{
+    if(dropdown.classList.contains('open') && !dropdown.contains(e.target) && e.target!==btn){
+      dropdown.classList.remove('open');
+      btn.classList.remove('open');
+    }
+  });
+})();
+
+function downloadDielineDemo(){
+  showToast('✓ Unduh dieline (demo) — sambungkan ke generator PDF untuk ekspor file cetak siap produksi.');
+}
+document.getElementById('fmDownloadDieline').addEventListener('click', downloadDielineDemo);
+document.getElementById('downloadDielineBtn').addEventListener('click', downloadDielineDemo);
+
+/* Bentuk baris `designs` dari state editor saat ini */
+function buildDesignRecord(){
+  const productType = productTypeMap[box.type];
+  return {
+    user_id: currentUser.id,
+    product_type_id: productType ? productType.id : null,
+    name: `${TYPE_LABEL[box.type]} — ${new Date().toLocaleDateString('id-ID')}`,
+    size_code: box.size,
+    custom_dimensions: box.size === 'CUSTOM' ? SIZE_DIMS.CUSTOM : null,
+    canvas_state: panels
+  };
+}
+
+async function saveDesign(asCopy){
+  if(!currentUser){
+    showToast('Masuk dulu lewat halaman utama untuk menyimpan desain.');
+    return;
+  }
+  const record = buildDesignRecord();
+  let result;
+  if(currentDesignId && !asCopy){
+    result = await supabase.from('designs').update(record).eq('id', currentDesignId).select().single();
+  } else {
+    result = await supabase.from('designs').insert(record).select().single();
+  }
+  if(result.error){
+    showToast('Gagal menyimpan desain: ' + result.error.message);
+    return;
+  }
+  currentDesignId = result.data.id;
+  showToast(asCopy ? '✓ Disimpan sebagai salinan baru.' : '✓ Desain tersimpan.');
+}
+document.getElementById('fmSave').addEventListener('click', ()=> saveDesign(false));
+document.getElementById('saveBtn').addEventListener('click', ()=> saveDesign(false));
+document.getElementById('fmSaveCopy').addEventListener('click', ()=> saveDesign(true));
+
+document.getElementById('fmLoadPrev').addEventListener('click', async ()=>{
+  if(!currentUser){
+    showToast('Masuk dulu lewat halaman utama untuk melihat riwayat desain.');
+    return;
+  }
+  const { data, error } = await supabase
+    .from('designs')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if(error || !data){
+    showToast('Belum ada desain tersimpan sebelumnya.');
+    return;
+  }
+  currentDesignId = data.id;
+  panels = data.canvas_state;
+  const slug = Object.keys(productTypeMap).find(k => productTypeMap[k].id === data.product_type_id);
+  if(slug){
+    box.type = slug;
+    box.basePrice = productTypeMap[slug].base_price_per_pcs;
+    document.getElementById('editorSubtitle').textContent = TYPE_LABEL[slug];
+    document.querySelectorAll('#typeSeg button[data-type]').forEach(b=> b.classList.toggle('active', b.dataset.type===slug));
+    rebuildSizeDimsForType();
+  }
+  box.size = data.size_code;
+  if(data.size_code === 'CUSTOM' && data.custom_dimensions){
+    SIZE_DIMS.CUSTOM = data.custom_dimensions;
+    SIZE_LABEL.CUSTOM = `${data.custom_dimensions.w}×${data.custom_dimensions.d}×${data.custom_dimensions.h}`;
+  }
+  selection = new Set();
+  lastSelectedId = null;
+  refreshSizeOptionsUI();
+  renderAll();
+  showToast('✓ Desain sebelumnya dimuat.');
+});
+document.getElementById('uploadDielineBtn').addEventListener('click', ()=>{
+  showToast('Upload dieline (demo) — sambungkan ke parser SVG/PDF untuk impor dieline sungguhan.');
+});
+document.getElementById('helpBtn').addEventListener('click', ()=>{
+  showToast('Pusat bantuan (demo) — sambungkan ke basis pengetahuan atau live chat.');
+});
+
+function setMenuCheck(btnId, active){
+  const btn = document.getElementById(btnId);
+  let mark = btn.querySelector('.cm-check');
+  if(!mark){ mark = document.createElement('span'); mark.className='cm-check'; btn.appendChild(mark); }
+  mark.textContent = active ? '✓' : '';
+}
+let rulerOn = false, gridOverlayOn = false;
+document.getElementById('fmRuler').addEventListener('click', ()=>{
+  rulerOn = !rulerOn;
+  document.querySelector('.editor-canvas-wrap').classList.toggle('show-ruler', rulerOn);
+  setMenuCheck('fmRuler', rulerOn);
+});
+document.getElementById('fmGrid').addEventListener('click', ()=>{
+  gridOverlayOn = !gridOverlayOn;
+  document.getElementById('flatGrid').classList.toggle('show-grid', gridOverlayOn);
+  setMenuCheck('fmGrid', gridOverlayOn);
+});
+
+/* click empty grid background (outside any cell) deselects element but keeps panel */
+document.getElementById('flatGrid').addEventListener('click', (e)=>{
+  if(e.target.id==='flatGrid'){ selection = new Set(); lastSelectedId=null; renderAll(); }
+});
+
+/* ============================ INIT FROM CATALOG LINK ============================ */
+(function initFromQuery(){
+  const params = new URLSearchParams(window.location.search);
+  const t = params.get('type');
+  if(t && TYPE_LABEL[t]){
+    const seg = document.getElementById('typeSeg');
+    seg.querySelectorAll('button').forEach(b=> b.classList.toggle('active', b.dataset.type===t));
+    const btn = seg.querySelector(`button[data-type="${t}"]`);
+    box.type = t; box.basePrice = parseInt(btn.dataset.price,10);
+    document.getElementById('editorSubtitle').textContent = TYPE_LABEL[t];
+    rebuildSizeDimsForType();
+    refreshSizeOptionsUI();
+    updateConfigHint();
+  }
+})();
+
+refreshSizeOptionsUI();
+updateConfigHint();
+renderAll();
+initSupabase();
+</script>
+
+</body>
+</html>
