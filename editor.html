@@ -38,6 +38,7 @@
     <div class="enav-title mono">EDITOR KOTAK — <span id="editorSubtitle">TERRA BOX</span></div>
 
     <div class="enav-right">
+      <span class="autosave-status mono" id="autosaveStatus"></span>
       <button type="button" class="enav-icon-btn" id="uploadDielineBtn" title="Upload Dieline">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10.5V2.5"/><path d="M4.8 5.5L8 2.3l3.2 3.2"/><path d="M2.5 10v2.2a1 1 0 001 1h9a1 1 0 001-1V10"/></svg>
         <span>Upload Dieline</span>
@@ -52,6 +53,8 @@
       <button type="button" class="enav-icon-btn enav-icon-only" id="saveBtn" title="Simpan">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M2.8 2.8h8.4L13.2 5v8.2a1 1 0 01-1 1H2.8a1 1 0 01-1-1V3.8a1 1 0 011-1z"/><path d="M4.6 2.8v3.4h5.2V2.8"/><path d="M4.8 9.4h6.4v3.8H4.8z"/></svg>
       </button>
+      <div class="regbar mono" id="editorAuthWrap" style="font-size:12px; margin-right:6px;"></div>
+      <button class="btn btn-sm" id="addToCartBtn">+ Keranjang</button>
       <button class="btn btn-solid btn-sm" id="quoteBtn">Minta Penawaran</button>
     </div>
   </nav>
@@ -198,23 +201,37 @@
       </div>
     </div>
 
-    <div class="editor-preview">
+    <div class="editor-preview" id="editorPreviewPanel">
       <div class="preview-stage" id="previewStage3d">
-        <div class="box3d" id="box3d">
-          <div class="face" data-face="front"><div class="face-canvas"></div></div>
-          <div class="face" data-face="back"><div class="face-canvas"></div></div>
-          <div class="face" data-face="right"><div class="face-canvas"></div></div>
-          <div class="face" data-face="left"><div class="face-canvas"></div></div>
-          <div class="lid-hinge" id="lidHinge">
-            <div class="face" data-face="top"><div class="face-canvas"></div><div class="flap fl"></div><div class="flap fr"></div></div>
-          </div>
-          <div class="face" data-face="bottom"><div class="face-canvas"></div></div>
+        <div class="preview-toolbar" id="previewToolbar">
+          <button type="button" class="preview-tool-btn" id="zoomOutBtn" title="Perkecil">−</button>
+          <span class="preview-zoom-level" id="zoomLevelOut">100%</span>
+          <button type="button" class="preview-tool-btn" id="zoomInBtn" title="Perbesar">+</button>
+          <span class="preview-tool-sep"></span>
+          <button type="button" class="preview-tool-btn" id="zoomResetBtn" title="Reset tampilan">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 8a5.5 5.5 0 11-1.7-3.97"/><path d="M13.5 2.7v3.3h-3.3"/></svg>
+          </button>
+          <button type="button" class="preview-tool-btn" id="expandPreviewBtn" title="Perbesar area pratinjau">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5H2.5V6"/><path d="M10 2.5h3.5V6"/><path d="M6 13.5H2.5V10"/><path d="M10 13.5h3.5V10"/></svg>
+          </button>
         </div>
-        <div class="dim-label dim-w" id="dimW">25</div>
-        <div class="dim-label dim-h" id="dimH">12</div>
-        <div class="dim-label dim-d" id="dimD">20</div>
+        <div class="stage-camera" id="stageCamera">
+          <div class="box3d" id="box3d">
+            <div class="face" data-face="front"><div class="face-outer"><div class="face-canvas"></div></div><div class="face-inner"></div></div>
+            <div class="face" data-face="back"><div class="face-outer"><div class="face-canvas"></div></div><div class="face-inner"></div></div>
+            <div class="face" data-face="right"><div class="face-outer"><div class="face-canvas"></div></div><div class="face-inner"></div></div>
+            <div class="face" data-face="left"><div class="face-outer"><div class="face-canvas"></div></div><div class="face-inner"></div></div>
+            <div class="lid-hinge" id="lidHinge">
+              <div class="face" data-face="top"><div class="face-outer"><div class="face-canvas"></div><div class="flap fl"></div><div class="flap fr"></div></div><div class="face-inner"></div></div>
+            </div>
+            <div class="face" data-face="bottom"><div class="face-outer"><div class="face-canvas"></div></div><div class="face-inner"></div></div>
+          </div>
+          <div class="dim-label dim-w" id="dimW">25</div>
+          <div class="dim-label dim-h" id="dimH">12</div>
+          <div class="dim-label dim-d" id="dimD">20</div>
+        </div>
       </div>
-      <div class="stage-caption"><span>PRATINJAU 3D · SERET UNTUK PUTAR</span><span id="specOut">SHIPPING · M · 25×20×12CM</span></div>
+      <div class="stage-caption"><span>PRATINJAU 3D · SERET UNTUK PUTAR · SCROLL UNTUK ZOOM · TENGAH-KLIK UNTUK GESER</span><span id="specOut">SHIPPING · M · 25×20×12CM</span></div>
       <div class="price-panel">
         <div class="amount" id="priceOut">Rp 360.000<span>Total estimasi (100 pcs)</span></div>
         <div style="text-align:right;">
@@ -244,7 +261,7 @@
 </footer>
 
 <script type="module">
-import { supabase, getCurrentUser, getProductTypeMap } from './supabase-client.js';
+import { supabase, getCurrentUser, getProductTypeMap, addToCart, signOut } from './supabase-client.js';
 
 /* ============================ SUPABASE ============================ */
 // currentUser: profil yang sedang login (null = belum login)
@@ -254,8 +271,37 @@ let currentUser = null;
 let productTypeMap = {};
 let currentDesignId = null;
 
+/* ---- status akun di navbar editor ----
+   Editor sebelumnya tidak punya cara masuk/keluar sama sekali, dan
+   currentUser hanya diisi sekali saat halaman dibuka — kalau user login
+   dari tab lain (mis. buka index.html di tab baru buat klik "Masuk"),
+   editor tidak pernah tahu. Sekarang currentUser diperbarui live lewat
+   onAuthStateChange, termasuk saat sesi berubah dari tab lain, tanpa
+   perlu reload halaman ini (desain yang sedang dikerjakan tidak hilang). */
+function updateEditorAuthUI(){
+  const wrap = document.getElementById('editorAuthWrap');
+  if(currentUser){
+    wrap.innerHTML = `<span>${currentUser.email}</span>&nbsp;·&nbsp;<a href="#" id="editorSignOut" style="text-decoration:none;">Keluar</a>`;
+    document.getElementById('editorSignOut').addEventListener('click', async (e)=>{
+      e.preventDefault();
+      await signOut();
+    });
+  } else {
+    // Dibuka di tab baru supaya progres desain di tab editor ini tidak
+    // hilang — setelah login di tab index.html, sesi otomatis tersinkron
+    // ke sini lewat onAuthStateChange.
+    wrap.innerHTML = `<a href="index.html?auth=signin" target="_blank" rel="noopener" style="text-decoration:none;">Masuk untuk simpan &amp; checkout →</a>`;
+  }
+}
+
+supabase.auth.onAuthStateChange((_event, session)=>{
+  currentUser = session?.user ?? null;
+  updateEditorAuthUI();
+});
+
 async function initSupabase(){
   currentUser = await getCurrentUser();
+  updateEditorAuthUI();
   productTypeMap = await getProductTypeMap();
   // Sinkronkan harga dasar tiap tipe dengan yang ada di database (kalau berhasil dimuat)
   document.querySelectorAll('#typeSeg button[data-type]').forEach(btn=>{
@@ -265,6 +311,29 @@ async function initSupabase(){
       if(btn.dataset.type === box.type) box.basePrice = row.base_price_per_pcs;
     }
   });
+
+  // Kalau editor dibuka lewat link ?design_id=... (misalnya dari tombol
+  // "Buka" di riwayat-desain.html), muat desain itu langsung.
+  const designId = new URLSearchParams(window.location.search).get('design_id');
+  if(designId){
+    if(!currentUser){
+      showToast('Masuk dulu lewat halaman utama untuk membuka desain ini.');
+      updatePrice();
+      suppressAutosave = false;
+      return;
+    }
+    const loaded = await loadDesignById(designId);
+    if(loaded){
+      suppressAutosave = false;
+      return; // applyDesignData sudah memanggil updatePrice()
+    }
+  }
+
+  // Desain baru (belum ada design_id, atau load gagal) -> snapshot awal
+  // supaya autosave tidak langsung nulis begitu init selesai kalau user
+  // belum benar-benar mengubah apa-apa.
+  lastSavedSnapshot = buildSaveSnapshotKey();
+  suppressAutosave = false;
   updatePrice();
 }
 
@@ -479,20 +548,36 @@ function renderPanel(key){
   };
 
   const face3d = document.querySelector(`.face[data-face="${key}"]`);
+  const faceOuter = face3d ? face3d.querySelector('.face-outer') : null;
   const faceEl = face3d ? face3d.querySelector('.face-canvas') : null;
   if(faceEl){
-    face3d.style.background = boxColor;
+    /* Only the outer (printed/exterior) layer ever gets the chosen box
+       color or the user's design elements. .face-inner is a separate,
+       fixed-material layer (see style.css) that's never touched here —
+       so nothing edited on the outside can ever "show through" to the
+       inside once a wall or the lid rotates open. */
+    faceOuter.style.background = boxColor;
     faceEl.style.background = ''; faceEl.innerHTML='';
     if(key==='front' && box.type==='bakery') addBakeryWindow(faceEl);
     panels[key].elements.forEach(el => faceEl.appendChild(buildElementNode(el, false, key)));
   }
 }
 
-function renderAll(){
+function renderAllCore(){
   PANEL_KEYS.forEach(renderPanel);
   updatePanelUI();
   updateCWE();
   updatePrice();
+}
+
+/* renderAll() is already called after essentially every state mutation in
+   this file (add/move/resize/style an element, change box type/size/qty/
+   color, select/deselect...). That makes it the one natural, low-risk hook
+   point for autosave — instead of touching every one of those call sites
+   individually, wrap the function itself so nothing else has to change. */
+function renderAll(){
+  renderAllCore();
+  scheduleAutosave();
 }
 
 function updatePanelUI(){
@@ -1345,7 +1430,9 @@ document.querySelectorAll('#colorSwatches .swatch').forEach(sw=>{
   const stage = document.getElementById('previewStage3d');
   let dragging=false, lastX=0, lastY=0;
   stage.addEventListener('pointerdown', (e)=>{
+    if(e.button !== undefined && e.button !== 0) return; // only left-button drags rotate; middle button is reserved for panning
     if(e.target.closest('.panel-el')) return;
+    if(e.target.closest('.preview-toolbar')) return;
     dragging=true; lastX=e.clientX; lastY=e.clientY;
     box3d.style.transition = 'none'; // manual drag overrides any in-flight snap animation
   });
@@ -1358,6 +1445,97 @@ document.querySelectorAll('#colorSwatches .swatch').forEach(sw=>{
     lastX=e.clientX; lastY=e.clientY;
   });
   applyBoxRotation(false); // set initial angle from shared state
+})();
+
+/* zoom (buttons + scroll wheel) and pan (middle-mouse-button drag) on the 3D preview,
+   plus a toggle to enlarge the whole preview panel. Kept as a separate transform layer
+   (.stage-camera) from the rotate drag above, so zoom/pan never fights with rotation —
+   the camera wrapper only ever gets translate()+scale(), rotation stays on #box3d. */
+(function initPreviewCamera(){
+  const stage = document.getElementById('previewStage3d');
+  const camera = document.getElementById('stageCamera');
+  const zoomInBtn = document.getElementById('zoomInBtn');
+  const zoomOutBtn = document.getElementById('zoomOutBtn');
+  const zoomResetBtn = document.getElementById('zoomResetBtn');
+  const zoomLevelOut = document.getElementById('zoomLevelOut');
+  const expandBtn = document.getElementById('expandPreviewBtn');
+  const previewPanel = document.getElementById('editorPreviewPanel');
+
+  const ZOOM_MIN = 0.4, ZOOM_MAX = 2.6, ZOOM_STEP = 0.18;
+  let camZoom = 1, camPanX = 0, camPanY = 0;
+
+  function clampZoom(z){ return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z)); }
+
+  function applyCamera(withTransition){
+    camera.style.transition = withTransition ? 'transform .16s ease-out' : 'none';
+    camera.style.transform = `translate(${camPanX}px, ${camPanY}px) scale(${camZoom})`;
+    zoomLevelOut.textContent = Math.round(camZoom * 100) + '%';
+    zoomOutBtn.disabled = camZoom <= ZOOM_MIN + 0.001;
+    zoomInBtn.disabled = camZoom >= ZOOM_MAX - 0.001;
+  }
+
+  function setZoom(z, withTransition){
+    camZoom = clampZoom(z);
+    applyCamera(withTransition);
+  }
+
+  zoomInBtn.addEventListener('click', ()=> setZoom(camZoom + ZOOM_STEP, true));
+  zoomOutBtn.addEventListener('click', ()=> setZoom(camZoom - ZOOM_STEP, true));
+  zoomResetBtn.addEventListener('click', ()=>{
+    camZoom = 1; camPanX = 0; camPanY = 0;
+    applyCamera(true);
+  });
+
+  /* mouse scroll over the preview area zooms in/out */
+  stage.addEventListener('wheel', (e)=>{
+    e.preventDefault();
+    const dir = e.deltaY < 0 ? 1 : -1;
+    setZoom(camZoom + dir * 0.14, false);
+  }, { passive:false });
+
+  /* hold the middle mouse button and drag to pan */
+  let panning = false, panLastX = 0, panLastY = 0;
+  stage.addEventListener('pointerdown', (e)=>{
+    if(e.button !== 1) return;
+    e.preventDefault();
+    panning = true;
+    panLastX = e.clientX; panLastY = e.clientY;
+    camera.style.transition = 'none';
+    stage.classList.add('is-panning');
+  });
+  stage.addEventListener('mousedown', (e)=>{
+    if(e.button === 1) e.preventDefault(); // stop the browser's middle-click autoscroll icon
+  });
+  window.addEventListener('pointermove', (e)=>{
+    if(!panning) return;
+    camPanX += (e.clientX - panLastX);
+    camPanY += (e.clientY - panLastY);
+    panLastX = e.clientX; panLastY = e.clientY;
+    applyCamera(false);
+  });
+  window.addEventListener('pointerup', (e)=>{
+    if(panning && e.button === 1){ panning = false; stage.classList.remove('is-panning'); }
+  });
+  stage.addEventListener('auxclick', (e)=>{ if(e.button === 1) e.preventDefault(); });
+
+  /* enlarge / restore the preview panel */
+  const expandIcon = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5H2.5V6"/><path d="M10 2.5h3.5V6"/><path d="M6 13.5H2.5V10"/><path d="M10 13.5h3.5V10"/></svg>';
+  const collapseIcon = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9.5L2.3 13.7"/><path d="M2.3 10.4v3.3h3.3"/><path d="M9.5 6.5L13.7 2.3"/><path d="M13.7 5.6V2.3h-3.3"/></svg>';
+  let previewExpanded = false;
+  function setExpanded(on){
+    previewExpanded = on;
+    previewPanel.classList.toggle('preview-expanded', on);
+    document.body.classList.toggle('preview-lock-scroll', on);
+    expandBtn.classList.toggle('active', on);
+    expandBtn.title = on ? 'Kembalikan ukuran pratinjau' : 'Perbesar area pratinjau';
+    expandBtn.innerHTML = on ? collapseIcon : expandIcon;
+  }
+  expandBtn.addEventListener('click', ()=> setExpanded(!previewExpanded));
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape' && previewExpanded) setExpanded(false);
+  });
+
+  applyCamera(false);
 })();
 
 /* ============================ GEOMETRY (flat dieline + 3D preview) ============================
@@ -1541,6 +1719,38 @@ function updatePrice(){
   updateSafeAreaOverlays();
 }
 
+document.getElementById('addToCartBtn').addEventListener('click', async ()=>{
+  if(!currentUser){
+    showToast('Masuk dulu lewat halaman utama untuk menambah ke keranjang.');
+    return;
+  }
+  const btn = document.getElementById('addToCartBtn');
+  btn.disabled = true;
+  const originalLabel = btn.textContent;
+  btn.textContent = 'Menambahkan…';
+
+  // Simpan/perbarui desain dulu supaya baris cart_items bisa menaut ke design_id.
+  await saveDesign(false);
+
+  const productType = productTypeMap[box.type];
+  const { error } = await addToCart({
+    productTypeId: productType ? productType.id : null,
+    designId: currentDesignId,
+    sizeCode: box.size,
+    customDimensions: box.size === 'CUSTOM' ? SIZE_DIMS.CUSTOM : null,
+    quantity: box.qty
+  });
+
+  btn.disabled = false;
+  btn.textContent = originalLabel;
+
+  if(error){
+    showToast('Gagal menambah ke keranjang: ' + error.message);
+    return;
+  }
+  showToast('✓ Ditambahkan ke keranjang.');
+});
+
 document.getElementById('quoteBtn').addEventListener('click', async ()=>{
   const quoteMsg = document.getElementById('quoteMsg');
   if(!currentUser){
@@ -1631,45 +1841,107 @@ function buildDesignRecord(){
   };
 }
 
-async function saveDesign(asCopy){
+/* Snapshot of everything that actually ends up in a saved `designs` row.
+   Used to skip autosave entirely when nothing design-relevant changed
+   (e.g. just clicking around to select/deselect elements), so autosave
+   never fires a write for a no-op. */
+function buildSaveSnapshotKey(){
+  return JSON.stringify({
+    type: box.type,
+    size: box.size,
+    custom: box.size === 'CUSTOM' ? SIZE_DIMS.CUSTOM : null,
+    panels
+  });
+}
+let lastSavedSnapshot = null;
+
+/* Shared save routine behind both the manual Save button/menu and
+   autosave. silent=true (autosave) updates the status pill only, never
+   the toast — so background saves don't interrupt the user. */
+async function persistDesign({ asCopy = false, silent = false } = {}){
   if(!currentUser){
-    showToast('Masuk dulu lewat halaman utama untuk menyimpan desain.');
-    return;
+    if(!silent) showToast('Masuk dulu lewat halaman utama untuk menyimpan desain.');
+    return { error: { message: 'Belum login' } };
   }
+  setAutosaveStatus('saving');
   const record = buildDesignRecord();
   let result;
-  if(currentDesignId && !asCopy){
-    result = await supabase.from('designs').update(record).eq('id', currentDesignId).select().single();
-  } else {
-    result = await supabase.from('designs').insert(record).select().single();
+  try{
+    if(currentDesignId && !asCopy){
+      result = await supabase.from('designs').update(record).eq('id', currentDesignId).select().single();
+    } else {
+      result = await supabase.from('designs').insert(record).select().single();
+    }
+  } catch(err){
+    result = { error: err };
   }
   if(result.error){
-    showToast('Gagal menyimpan desain: ' + result.error.message);
-    return;
+    setAutosaveStatus('error');
+    if(!silent) showToast('Gagal menyimpan desain: ' + result.error.message);
+    return result;
   }
   currentDesignId = result.data.id;
-  showToast(asCopy ? '✓ Disimpan sebagai salinan baru.' : '✓ Desain tersimpan.');
+  lastSavedSnapshot = buildSaveSnapshotKey();
+  setAutosaveStatus('saved');
+  if(!silent) showToast(asCopy ? '✓ Disimpan sebagai salinan baru.' : '✓ Desain tersimpan.');
+  return result;
+}
+
+async function saveDesign(asCopy){
+  return persistDesign({ asCopy });
 }
 document.getElementById('fmSave').addEventListener('click', ()=> saveDesign(false));
 document.getElementById('saveBtn').addEventListener('click', ()=> saveDesign(false));
 document.getElementById('fmSaveCopy').addEventListener('click', ()=> saveDesign(true));
 
-document.getElementById('fmLoadPrev').addEventListener('click', async ()=>{
-  if(!currentUser){
-    showToast('Masuk dulu lewat halaman utama untuk melihat riwayat desain.');
-    return;
+/* ============================ AUTOSAVE ============================ */
+// suppressAutosave stays true until initSupabase() has finished its own
+// startup work (including possibly loading a design from ?design_id=...),
+// so autosave never fires from the editor's own initial/default render or
+// from applying a just-loaded design back onto itself.
+let suppressAutosave = true;
+let autosaveTimer = null;
+let autosaveInFlight = false;
+let autosavePending = false;
+
+function setAutosaveStatus(state){
+  const el = document.getElementById('autosaveStatus');
+  if(!el) return;
+  el.classList.remove('saving','saved','error');
+  if(state === 'saving'){ el.textContent = 'Menyimpan…'; el.classList.add('saving'); }
+  else if(state === 'saved'){ el.textContent = '✓ Tersimpan'; el.classList.add('saved'); }
+  else if(state === 'error'){ el.textContent = 'Gagal menyimpan'; el.classList.add('error'); }
+  else { el.textContent = ''; }
+}
+
+function scheduleAutosave(){
+  if(suppressAutosave || !currentUser) return;
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(runAutosave, 1500);
+}
+
+async function runAutosave(){
+  if(!currentUser) return;
+  if(buildSaveSnapshotKey() === lastSavedSnapshot) return; // nothing to save
+  if(autosaveInFlight){ autosavePending = true; return; }
+  autosaveInFlight = true;
+  await persistDesign({ silent: true });
+  autosaveInFlight = false;
+  if(autosavePending){
+    autosavePending = false;
+    scheduleAutosave();
   }
-  const { data, error } = await supabase
-    .from('designs')
-    .select('*')
-    .eq('user_id', currentUser.id)
-    .order('updated_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if(error || !data){
-    showToast('Belum ada desain tersimpan sebelumnya.');
-    return;
-  }
+}
+
+/* Terapkan satu baris `designs` (dari Supabase) ke state editor saat ini.
+   Dipakai baik oleh "Buka Desain Terakhir" maupun saat editor dibuka lewat
+   link ?design_id=... (misalnya dari riwayat-desain.html). */
+function applyDesignData(data){
+  // Applying loaded data calls renderAll() below like any other state
+  // change, but this isn't a user edit — don't let it schedule an
+  // autosave that would just re-write what we just read back.
+  const wasSuppressed = suppressAutosave;
+  suppressAutosave = true;
   currentDesignId = data.id;
   panels = data.canvas_state;
   const slug = Object.keys(productTypeMap).find(k => productTypeMap[k].id === data.product_type_id);
@@ -1689,6 +1961,45 @@ document.getElementById('fmLoadPrev').addEventListener('click', async ()=>{
   lastSelectedId = null;
   refreshSizeOptionsUI();
   renderAll();
+  updatePrice();
+  lastSavedSnapshot = buildSaveSnapshotKey();
+  suppressAutosave = wasSuppressed;
+}
+
+// Muat desain tertentu berdasarkan id baris `designs`. RLS "User kelola
+// desain sendiri" otomatis menolak kalau id itu bukan milik user yang login.
+async function loadDesignById(id){
+  const { data, error } = await supabase
+    .from('designs')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if(error || !data){
+    showToast('Desain tidak ditemukan, atau bukan milik akun kamu.');
+    return false;
+  }
+  applyDesignData(data);
+  showToast(`✓ "${data.name}" dimuat.`);
+  return true;
+}
+
+document.getElementById('fmLoadPrev').addEventListener('click', async ()=>{
+  if(!currentUser){
+    showToast('Masuk dulu lewat halaman utama untuk melihat riwayat desain.');
+    return;
+  }
+  const { data, error } = await supabase
+    .from('designs')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if(error || !data){
+    showToast('Belum ada desain tersimpan sebelumnya.');
+    return;
+  }
+  applyDesignData(data);
   showToast('✓ Desain sebelumnya dimuat.');
 });
 document.getElementById('uploadDielineBtn').addEventListener('click', ()=>{

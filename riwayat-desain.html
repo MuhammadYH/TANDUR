@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Riwayat Desain — Tandur</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .acc-top{ padding:34px 0 0; }
+  .acc-back{ display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-family:'IBM Plex Mono',monospace; text-decoration:none; color:#6b6656; margin-bottom:18px; }
+  .acc-back:hover{ color:var(--ink); }
+  .acc-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:22px; flex-wrap:wrap; }
+  .acc-head h1{ font-size:34px; }
+  .acc-tabs{ display:flex; gap:8px; margin-bottom:26px; flex-wrap:wrap; }
+  .acc-tab{ font-family:'IBM Plex Mono',monospace; font-size:12px; text-transform:uppercase; letter-spacing:.04em; text-decoration:none; color:var(--ink); padding:8px 14px; border:1px solid var(--line-strong); border-radius:20px; }
+  .acc-tab.active{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+  .acc-body{ padding-bottom:70px; }
+  .acc-empty{ background:#fff; border:1px dashed var(--line-strong); border-radius:8px; padding:44px 28px; text-align:center; max-width:480px; }
+  .acc-empty p{ color:#6b6656; font-size:14px; margin:8px 0 18px; }
+
+  .design-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:16px; }
+  .design-card{ background:#fff; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .design-thumb{ aspect-ratio:1/1; background:var(--paper-2); display:flex; align-items:center; justify-content:center; }
+  .design-thumb img{ width:100%; height:100%; object-fit:cover; }
+  .design-thumb svg{ width:44%; opacity:0.35; }
+  .design-body{ padding:13px 14px; }
+  .design-name{ font-weight:700; font-size:14px; margin-bottom:3px; }
+  .design-meta{ font-size:11.5px; color:#8f8a78; margin-bottom:12px; }
+  .design-actions{ display:flex; gap:8px; }
+  .design-actions .btn{ padding:8px 12px; font-size:11px; flex:1; justify-content:center; }
+  .design-actions .btn-del{ border-color:rgba(194,59,59,0.4); color:#C23B3B; }
+  .design-actions .btn-del:hover{ background:#C23B3B; color:#fff; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav-top wrap" style="justify-content:space-between;">
+    <a href="index.html" class="logo" style="text-decoration:none;"><img src="assets/logo/tandur.png" alt="Tandur"></a>
+    <div id="acEmailWrap" class="regbar mono" style="font-size:12.5px;"></div>
+  </div>
+</header>
+
+<section class="acc-top wrap">
+  <a href="index.html" class="acc-back">← Kembali ke Beranda</a>
+  <div class="acc-head">
+    <h1>Riwayat<br>Desain.</h1>
+    <a href="editor.html" class="btn btn-accent">+ Desain Baru</a>
+  </div>
+  <div class="acc-tabs">
+    <a href="profil.html" class="acc-tab">Profil</a>
+    <a href="lacak-pesanan.html" class="acc-tab">Lacak Pesanan</a>
+    <a href="riwayat-desain.html" class="acc-tab active">Riwayat Desain</a>
+  </div>
+</section>
+
+<section class="acc-body wrap">
+  <div id="loggedOutState" class="acc-empty" style="display:none;">
+    <p>Kamu perlu masuk dulu untuk melihat desain tersimpanmu.</p>
+    <a href="index.html" class="btn btn-solid">Ke Beranda untuk Masuk</a>
+  </div>
+
+  <div id="emptyDesigns" class="acc-empty" style="display:none;">
+    <p>Belum ada desain tersimpan.</p>
+    <a href="editor.html" class="btn btn-solid">Buka Editor Desain</a>
+  </div>
+
+  <div id="designGrid" class="design-grid"></div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <div class="logo" style="margin-bottom:14px;"><img src="assets/logo/tandur.png" alt="Tandur" style="height:24px;"></div>
+      <p style="font-size:13px; color:#a8a390; max-width:32ch;">Platform desain kemasan makanan custom untuk resto, kafe, dan brand F&amp;B.</p>
+    </div>
+    <div><h4>Akun</h4><ul><li><a href="profil.html">Profil</a></li><li><a href="lacak-pesanan.html">Lacak Pesanan</a></li><li><a href="riwayat-desain.html">Riwayat Desain</a></li></ul></div>
+    <div><h4>Produk</h4><ul><li><a href="index.html#katalog">Katalog</a></li><li><a href="editor.html">Editor Desain</a></li></ul></div>
+    <div><h4>Spesifikasi</h4><ul class="mono" style="font-size:12px;"><li>MOQ mulai 50 pcs</li><li>Cetak CMYK full color</li><li>Produksi 5–7 hari kerja</li></ul></div>
+  </div>
+  <div class="wrap foot-bottom"><span>© 2026 Tandur. Semua hak dilindungi.</span><span>DIELINE NO. 00214-B · REV 3</span></div>
+</footer>
+
+<script type="module">
+import { supabase, getCurrentUser, signOut, getDesigns, deleteDesign } from './supabase-client.js';
+
+const tanggal = (iso) => new Date(iso).toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' });
+
+const PLACEHOLDER_SVG = `<svg viewBox="0 0 120 100" fill="none" stroke="#171510" stroke-width="1.5"><rect x="10" y="55" width="100" height="30"/><g transform="rotate(-35 20 55)"><rect x="10" y="20" width="100" height="30"/></g></svg>`;
+
+async function init(){
+  const user = await getCurrentUser();
+  const emailWrap = document.getElementById('acEmailWrap');
+
+  if(!user){
+    document.getElementById('loggedOutState').style.display = 'block';
+    emailWrap.innerHTML = '<a href="index.html" style="text-decoration:none;">Masuk →</a>';
+    return;
+  }
+
+  emailWrap.innerHTML = `<span>${user.email}</span> &nbsp;·&nbsp; <a href="#" id="acSignOut" style="text-decoration:none;">Keluar</a>`;
+  document.getElementById('acSignOut').addEventListener('click', async (e)=>{
+    e.preventDefault();
+    await signOut();
+    window.location.href = 'index.html';
+  });
+
+  await renderDesigns();
+}
+
+async function renderDesigns(){
+  const designs = await getDesigns();
+  const grid = document.getElementById('designGrid');
+
+  if(designs.length === 0){
+    document.getElementById('emptyDesigns').style.display = 'block';
+    grid.innerHTML = '';
+    return;
+  }
+  document.getElementById('emptyDesigns').style.display = 'none';
+
+  grid.innerHTML = designs.map(d => `
+    <div class="design-card" data-id="${d.id}">
+      <div class="design-thumb">
+        ${d.thumbnail_url ? `<img src="${d.thumbnail_url}" alt="${d.name}">` : PLACEHOLDER_SVG}
+      </div>
+      <div class="design-body">
+        <div class="design-name">${d.name}</div>
+        <div class="design-meta">${d.product_types?.name || 'Produk'} · ${d.size_code} · diubah ${tanggal(d.updated_at)}</div>
+        <div class="design-actions">
+          <a class="btn" href="editor.html?design_id=${d.id}">Buka</a>
+          <button class="btn btn-del" data-del="${d.id}">Hapus</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  grid.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if(!confirm('Hapus desain ini? Tindakan ini tidak bisa dibatalkan.')) return;
+      btn.disabled = true;
+      btn.textContent = 'Menghapus…';
+      const { error } = await deleteDesign(btn.dataset.del);
+      if(error){
+        alert('Gagal menghapus: ' + error.message);
+        btn.disabled = false;
+        btn.textContent = 'Hapus';
+        return;
+      }
+      await renderDesigns();
+    });
+  });
+}
+
+supabase.auth.onAuthStateChange(()=> init());
+init();
+</script>
+
+</body>
+</html>

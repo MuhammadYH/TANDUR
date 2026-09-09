@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lacak Pesanan — Tandur</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .acc-top{ padding:34px 0 0; }
+  .acc-back{ display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-family:'IBM Plex Mono',monospace; text-decoration:none; color:#6b6656; margin-bottom:18px; }
+  .acc-back:hover{ color:var(--ink); }
+  .acc-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:22px; flex-wrap:wrap; }
+  .acc-head h1{ font-size:34px; }
+  .acc-tabs{ display:flex; gap:8px; margin-bottom:26px; flex-wrap:wrap; }
+  .acc-tab{ font-family:'IBM Plex Mono',monospace; font-size:12px; text-transform:uppercase; letter-spacing:.04em; text-decoration:none; color:var(--ink); padding:8px 14px; border:1px solid var(--line-strong); border-radius:20px; }
+  .acc-tab.active{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+  .acc-body{ padding-bottom:70px; }
+  .acc-empty{ background:#fff; border:1px dashed var(--line-strong); border-radius:8px; padding:44px 28px; text-align:center; max-width:480px; }
+  .acc-empty p{ color:#6b6656; font-size:14px; margin:8px 0 18px; }
+
+  .status-pill{ display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:.03em; white-space:nowrap; }
+  .status-pill.draft{ background:rgba(23,21,16,0.08); color:#6b6656; }
+  .status-pill.awaiting_proof{ background:rgba(245,197,24,0.18); color:#8A6D06; }
+  .status-pill.proof_review{ background:rgba(35,139,210,0.14); color:#1B63AE; }
+  .status-pill.in_production{ background:rgba(236,30,121,0.12); color:#B5165F; }
+  .status-pill.shipped{ background:rgba(35,139,210,0.14); color:#1B63AE; }
+  .status-pill.completed{ background:rgba(46,139,79,0.12); color:#2E8B4F; }
+  .status-pill.cancelled{ background:rgba(194,59,59,0.12); color:#C23B3B; }
+
+  .order-list{ display:flex; flex-direction:column; gap:12px; max-width:760px; }
+  .order-card{ background:#fff; border:1px solid var(--line); border-radius:8px; padding:18px 20px; cursor:pointer; }
+  .order-card-top{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .order-no{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:#8f8a78; margin-bottom:3px; }
+  .order-title{ font-weight:700; font-size:15px; }
+  .order-meta{ font-size:12.5px; color:#6b6656; margin-top:4px; }
+  .order-price{ font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--kraft-dark); font-weight:600; }
+  .order-detail{ display:none; margin-top:16px; padding-top:14px; border-top:1px dashed var(--line); font-size:13px; }
+  .order-card.open .order-detail{ display:block; }
+  .order-detail .row{ display:flex; justify-content:space-between; padding:5px 0; }
+  .order-detail .row span:first-child{ color:#8f8a78; }
+  .proof-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px dashed var(--line); font-size:12.5px; }
+  .proof-row:last-child{ border-bottom:none; }
+  .proof-status{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; padding:2px 8px; border-radius:20px; }
+  .proof-status.pending{ background:rgba(245,197,24,0.18); color:#8A6D06; }
+  .proof-status.approved{ background:rgba(46,139,79,0.12); color:#2E8B4F; }
+  .proof-status.revision_requested{ background:rgba(35,139,210,0.14); color:#1B63AE; }
+  .proof-status.rejected{ background:rgba(194,59,59,0.12); color:#C23B3B; }
+  .chev-toggle{ transition:transform .15s; flex:none; }
+  .order-card.open .chev-toggle{ transform:rotate(180deg); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav-top wrap" style="justify-content:space-between;">
+    <a href="index.html" class="logo" style="text-decoration:none;"><img src="assets/logo/tandur.png" alt="Tandur"></a>
+    <div id="acEmailWrap" class="regbar mono" style="font-size:12.5px;"></div>
+  </div>
+</header>
+
+<section class="acc-top wrap">
+  <a href="index.html" class="acc-back">← Kembali ke Beranda</a>
+  <div class="acc-head">
+    <h1>Lacak<br>Pesanan.</h1>
+  </div>
+  <div class="acc-tabs">
+    <a href="profil.html" class="acc-tab">Profil</a>
+    <a href="lacak-pesanan.html" class="acc-tab active">Lacak Pesanan</a>
+    <a href="riwayat-desain.html" class="acc-tab">Riwayat Desain</a>
+  </div>
+</section>
+
+<section class="acc-body wrap">
+  <div id="loggedOutState" class="acc-empty" style="display:none;">
+    <p>Kamu perlu masuk dulu untuk melihat pesananmu.</p>
+    <a href="index.html" class="btn btn-solid">Ke Beranda untuk Masuk</a>
+  </div>
+
+  <div id="emptyOrders" class="acc-empty" style="display:none;">
+    <p>Belum ada pesanan. Yuk mulai desain kemasanmu sendiri.</p>
+    <a href="editor.html" class="btn btn-solid">Buka Editor Desain</a>
+  </div>
+
+  <div id="orderList" class="order-list"></div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <div class="logo" style="margin-bottom:14px;"><img src="assets/logo/tandur.png" alt="Tandur" style="height:24px;"></div>
+      <p style="font-size:13px; color:#a8a390; max-width:32ch;">Platform desain kemasan makanan custom untuk resto, kafe, dan brand F&amp;B.</p>
+    </div>
+    <div><h4>Akun</h4><ul><li><a href="profil.html">Profil</a></li><li><a href="lacak-pesanan.html">Lacak Pesanan</a></li><li><a href="riwayat-desain.html">Riwayat Desain</a></li></ul></div>
+    <div><h4>Produk</h4><ul><li><a href="index.html#katalog">Katalog</a></li><li><a href="editor.html">Editor Desain</a></li></ul></div>
+    <div><h4>Spesifikasi</h4><ul class="mono" style="font-size:12px;"><li>MOQ mulai 50 pcs</li><li>Cetak CMYK full color</li><li>Produksi 5–7 hari kerja</li></ul></div>
+  </div>
+  <div class="wrap foot-bottom"><span>© 2026 Tandur. Semua hak dilindungi.</span><span>DIELINE NO. 00214-B · REV 3</span></div>
+</footer>
+
+<script type="module">
+import { supabase, getCurrentUser, signOut, getOrders, getOrderProofs } from './supabase-client.js';
+
+const rupiah = (n) => 'Rp' + Math.round(n).toLocaleString('id-ID');
+const tanggal = (iso) => new Date(iso).toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' });
+
+const STATUS_LABEL = {
+  draft: 'Draft', awaiting_proof: 'Menunggu Proof', proof_review: 'Proof Direview',
+  in_production: 'Diproduksi', shipped: 'Dikirim', completed: 'Selesai', cancelled: 'Dibatalkan'
+};
+const PROOF_STATUS_LABEL = {
+  pending: 'Menunggu Review', approved: 'Disetujui', revision_requested: 'Revisi Diminta', rejected: 'Ditolak'
+};
+
+async function init(){
+  const user = await getCurrentUser();
+  const emailWrap = document.getElementById('acEmailWrap');
+
+  if(!user){
+    document.getElementById('loggedOutState').style.display = 'block';
+    emailWrap.innerHTML = '<a href="index.html" style="text-decoration:none;">Masuk →</a>';
+    return;
+  }
+
+  emailWrap.innerHTML = `<span>${user.email}</span> &nbsp;·&nbsp; <a href="#" id="acSignOut" style="text-decoration:none;">Keluar</a>`;
+  document.getElementById('acSignOut').addEventListener('click', async (e)=>{
+    e.preventDefault();
+    await signOut();
+    window.location.href = 'index.html';
+  });
+
+  const orders = await getOrders();
+  const listEl = document.getElementById('orderList');
+
+  if(orders.length === 0){
+    document.getElementById('emptyOrders').style.display = 'block';
+    return;
+  }
+
+  listEl.innerHTML = orders.map(o => `
+    <div class="order-card" data-id="${o.id}">
+      <div class="order-card-top">
+        <div>
+          <div class="order-no">${o.order_no}</div>
+          <div class="order-title">${o.product_types?.name || 'Produk'} · ${o.size_code} · ${o.quantity} pcs</div>
+          <div class="order-meta">Dipesan ${tanggal(o.created_at)}</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span class="order-price">${rupiah(o.total_price)}</span>
+          <span class="status-pill ${o.status}">${STATUS_LABEL[o.status] || o.status}</span>
+          <svg class="chev-toggle" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
+      </div>
+      <div class="order-detail" id="detail-${o.id}">
+        <div class="row"><span>Ukuran</span><span>${o.size_code}${o.custom_dimensions ? ' (custom: ' + o.custom_dimensions.w + '×' + o.custom_dimensions.d + '×' + o.custom_dimensions.h + ' cm)' : ''}</span></div>
+        <div class="row"><span>Jumlah</span><span>${o.quantity} pcs</span></div>
+        <div class="row"><span>Harga satuan</span><span>${rupiah(o.unit_price)}</span></div>
+        ${o.notes ? `<div class="row"><span>Catatan</span><span>${o.notes}</span></div>` : ''}
+        <div id="proofs-${o.id}" style="margin-top:12px;"></div>
+      </div>
+    </div>
+  `).join('');
+
+  listEl.querySelectorAll('.order-card').forEach(card => {
+    card.addEventListener('click', async () => {
+      const wasOpen = card.classList.contains('open');
+      card.classList.toggle('open');
+      if(!wasOpen){
+        const id = card.dataset.id;
+        const proofsWrap = document.getElementById(`proofs-${id}`);
+        if(!proofsWrap.dataset.loaded){
+          const proofs = await getOrderProofs(id);
+          proofsWrap.dataset.loaded = '1';
+          if(proofs.length === 0){
+            proofsWrap.innerHTML = `<div style="color:#8f8a78; font-size:12.5px;">Belum ada proof desain untuk order ini.</div>`;
+          } else {
+            proofsWrap.innerHTML = `<div style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; color:#8f8a78; margin-bottom:6px;">Riwayat Proof</div>` +
+              proofs.map(p => `
+                <div class="proof-row">
+                  <span>Versi ${p.version} · ${tanggal(p.created_at)}${p.revision_notes ? ' — ' + p.revision_notes : ''}</span>
+                  <span class="proof-status ${p.status}">${PROOF_STATUS_LABEL[p.status] || p.status}</span>
+                </div>
+              `).join('');
+          }
+        }
+      }
+    });
+  });
+}
+
+supabase.auth.onAuthStateChange(()=> init());
+init();
+</script>
+
+</body>
+</html>

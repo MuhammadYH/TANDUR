@@ -114,8 +114,9 @@
         <div class="nav-panel simple" id="navAccountPanel">
           <a href="#" id="navSignIn">Masuk</a>
           <a href="#" id="navSignUp">Daftar Akun</a>
-          <a href="#">Lacak Pesanan</a>
-          <a href="#">Riwayat Desain</a>
+          <a href="profil.html" id="navProfile" style="display:none;">Lihat Profil</a>
+          <a href="lacak-pesanan.html" id="navTrackOrder">Lacak Pesanan</a>
+          <a href="riwayat-desain.html" id="navDesignHistory">Riwayat Desain</a>
           <a href="#" id="navSignOut" style="display:none;">Keluar</a>
         </div>
       </div>
@@ -223,7 +224,10 @@
           <h3>Terra Box</h3>
           <p>Kotak makan clamshell dengan tutup menyatu — pas untuk nasi box, makanan berat, atau porsi berbagi.</p>
           <div class="spec-list"><div><span>Bahan</span><span>Bagasse / Pulp Molded</span></div><div><span>Ukuran</span><span>S · M · L / Custom</span></div><div><span>Min. order</span><span>50 pcs</span></div></div>
-          <a href="editor.html?type=box" class="btn">Kustomisasi →</a>
+          <div class="cat-actions">
+            <a href="editor.html?type=box" class="btn">Kustomisasi →</a>
+            <button type="button" class="btn btn-solid" data-buy="box" data-size="M" data-qty="50">Beli Langsung →</button>
+          </div>
         </div>
       </div>
       <div class="cat-card">
@@ -236,7 +240,10 @@
           <h3>Terra Burger</h3>
           <p>Clamshell mungil untuk fast food — burger, sandwich, atau kentang goreng, tetap rapi dibawa jalan.</p>
           <div class="spec-list"><div><span>Bahan</span><span>Bagasse Molded Fiber</span></div><div><span>Ukuran</span><span>S · M · L / Custom</span></div><div><span>Min. order</span><span>100 pcs</span></div></div>
-          <a href="editor.html?type=burger" class="btn">Kustomisasi →</a>
+          <div class="cat-actions">
+            <a href="editor.html?type=burger" class="btn">Kustomisasi →</a>
+            <button type="button" class="btn btn-solid" data-buy="burger" data-size="M" data-qty="100">Beli Langsung →</button>
+          </div>
         </div>
       </div>
       <div class="cat-card">
@@ -250,7 +257,10 @@
           <h3>Terra Bakery</h3>
           <p>Kotak kue &amp; roti dengan jendela lihat-isi, tutup tuck-flap — cocok untuk cake, donat, dan pastry.</p>
           <div class="spec-list"><div><span>Bahan</span><span>SBS Paperboard</span></div><div><span>Ukuran</span><span>S · M · L / Custom</span></div><div><span>Min. order</span><span>100 pcs</span></div></div>
-          <a href="editor.html?type=bakery" class="btn">Kustomisasi →</a>
+          <div class="cat-actions">
+            <a href="editor.html?type=bakery" class="btn">Kustomisasi →</a>
+            <button type="button" class="btn btn-solid" data-buy="bakery" data-size="M" data-qty="100">Beli Langsung →</button>
+          </div>
         </div>
       </div>
       <div class="cat-card">
@@ -264,7 +274,10 @@
           <h3>Terra Tray</h3>
           <p>Nampan terbuka tanpa tutup — untuk snack, finger food, atau sajian yang ditata langsung di meja.</p>
           <div class="spec-list"><div><span>Bahan</span><span>Bagasse Molded Fiber</span></div><div><span>Ukuran</span><span>S · M · L / Custom</span></div><div><span>Min. order</span><span>100 pcs</span></div></div>
-          <a href="editor.html?type=tray" class="btn">Kustomisasi →</a>
+          <div class="cat-actions">
+            <a href="editor.html?type=tray" class="btn">Kustomisasi →</a>
+            <button type="button" class="btn btn-solid" data-buy="tray" data-size="M" data-qty="100">Beli Langsung →</button>
+          </div>
         </div>
       </div>
     </div>
@@ -291,8 +304,87 @@
   <div class="wrap foot-bottom"><span>© 2026 Tandur. Semua hak dilindungi.</span><span>DIELINE NO. 00214-B · REV 3</span></div>
 </footer>
 
+<div class="checkout-overlay" id="checkoutOverlay">
+  <div class="checkout-modal">
+    <button class="checkout-close" id="checkoutCloseBtn" aria-label="Tutup">×</button>
+    <h3>Detail Pengiriman</h3>
+    <div class="sub">Isi alamat tujuan, lalu konfirmasi untuk mengubah keranjang jadi pesanan.</div>
+    <form id="checkoutForm">
+      <div class="checkout-field">
+        <label>Nama Penerima</label>
+        <input type="text" id="coRecipient" required>
+      </div>
+      <div class="checkout-field">
+        <label>Nomor Telepon</label>
+        <input type="text" id="coPhone" required>
+      </div>
+      <div class="checkout-field">
+        <label>Alamat Lengkap</label>
+        <textarea id="coAddress" required placeholder="Jalan, nomor, kelurahan, kecamatan"></textarea>
+      </div>
+      <div class="checkout-row2">
+        <div class="checkout-field">
+          <label>Kota</label>
+          <input type="text" id="coCity" required>
+        </div>
+        <div class="checkout-field">
+          <label>Kode Pos</label>
+          <input type="text" id="coPostal">
+        </div>
+      </div>
+      <div class="checkout-field">
+        <label>Catatan (opsional)</label>
+        <textarea id="coNotes" placeholder="Instruksi khusus untuk tim produksi/pengiriman"></textarea>
+      </div>
+      <div class="checkout-summary" id="checkoutSummary"></div>
+      <div class="checkout-actions">
+        <button type="button" class="btn" id="checkoutCancelBtn">Batal</button>
+        <button type="submit" class="btn btn-solid" id="checkoutSubmitBtn">Konfirmasi Pesanan</button>
+      </div>
+      <div class="checkout-msg" id="checkoutMsg"></div>
+    </form>
+  </div>
+</div>
+
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-modal">
+    <button class="auth-close" id="authCloseBtn" aria-label="Tutup">×</button>
+    <div class="auth-tabs">
+      <button type="button" class="auth-tab" id="authTabSignIn" data-tab="signin">Masuk</button>
+      <button type="button" class="auth-tab" id="authTabSignUp" data-tab="signup">Daftar Akun</button>
+    </div>
+    <h3 id="authTitle">Masuk ke Akun Kamu</h3>
+    <div class="sub" id="authSub">Masukkan email kamu, kami akan kirim link masuk — tanpa perlu password.</div>
+    <form id="authForm">
+      <div class="checkout-field">
+        <label>Alamat Email</label>
+        <input type="email" id="authEmail" placeholder="nama@email.com" required>
+      </div>
+      <div class="checkout-actions">
+        <button type="button" class="btn" id="authCancelBtn">Batal</button>
+        <button type="submit" class="btn btn-solid" id="authSubmitBtn">Kirim Link Masuk</button>
+      </div>
+      <div class="checkout-msg" id="authMsg"></div>
+    </form>
+    <div class="auth-note">Dengan melanjutkan, kamu setuju dengan Syarat &amp; Ketentuan serta Kebijakan Privasi Tandur.</div>
+  </div>
+</div>
+
+<div class="confirm-overlay" id="authRequiredOverlay">
+  <div class="confirm-modal">
+    <button class="confirm-close" id="authRequiredCloseBtn" aria-label="Tutup">×</button>
+    <svg class="confirm-icon" viewBox="0 0 24 24" fill="none" stroke="#171510" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"></circle><path d="M5 20c1.2-3.6 4-5.4 7-5.4s5.8 1.8 7 5.4"></path></svg>
+    <h3>Masuk Dulu, Yuk</h3>
+    <p id="authRequiredMsg">Kamu perlu masuk ke akun untuk melanjutkan aksi ini.</p>
+    <div class="confirm-actions">
+      <button type="button" class="btn" id="authRequiredCancelBtn">Batal</button>
+      <button type="button" class="btn btn-solid" id="authRequiredSignInBtn">Masuk Sekarang</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
-import { supabase, getCurrentUser, signInWithEmail, signOut, getCartItems, removeCartItem, getAllProductSizes } from './supabase-client.js';
+import { supabase, getCurrentUser, signInWithEmail, signOut, getCartItems, removeCartItem, getAllProductSizes, getProfile, checkoutCart, getProductTypeMap, addToCart } from './supabase-client.js';
 
 const rupiah = (n) => 'Rp' + Math.round(n).toLocaleString('id-ID');
 
@@ -367,36 +459,271 @@ async function refreshAccountUI(){
   const user = await getCurrentUser();
   const signInLink = document.getElementById('navSignIn');
   const signUpLink = document.getElementById('navSignUp');
+  const profileLink = document.getElementById('navProfile');
   const signOutLink = document.getElementById('navSignOut');
 
   if(user){
+    // sudah login -> sembunyikan Masuk & Daftar Akun, tampilkan Lihat Profil
     signInLink.style.display = 'none';
     signUpLink.style.display = 'none';
+    profileLink.style.display = 'block';
+    profileLink.textContent = `Lihat Profil (${user.email})`;
     signOutLink.style.display = 'block';
-    signOutLink.textContent = `Keluar (${user.email})`;
   } else {
+    // belum login -> tampilkan Masuk & Daftar Akun, sembunyikan Lihat Profil
     signInLink.style.display = 'block';
     signUpLink.style.display = 'block';
+    profileLink.style.display = 'none';
     signOutLink.style.display = 'none';
   }
 
   await refreshCart(user);
 }
 
-document.getElementById('cartCheckoutBtn').addEventListener('click', ()=>{
-  alert('Checkout akan segera hadir — tim kami akan hubungi kamu untuk proses pesanan lebih lanjut.');
-});
-
-async function handleSignIn(e){
+// Lacak Pesanan & Riwayat Desain butuh login dulu.
+// Kalau belum login, alihkan ke alur masuk alih-alih membuka halaman kosong.
+async function requireAuthThenGo(e, url){
   e.preventDefault();
-  const email = prompt('Masukkan email kamu — kami akan kirim link masuk (tanpa password):');
-  if(!email) return;
-  const { error } = await signInWithEmail(email);
-  alert(error ? 'Gagal mengirim link: ' + error.message : `Link masuk sudah dikirim ke ${email}, cek inbox kamu.`);
+  const user = await getCurrentUser();
+  if(!user){
+    openAuthRequired('Masuk dulu ya untuk melihat halaman ini.');
+    return;
+  }
+  window.location.href = url;
+}
+document.getElementById('navTrackOrder').addEventListener('click', (e)=> requireAuthThenGo(e, 'lacak-pesanan.html'));
+document.getElementById('navDesignHistory').addEventListener('click', (e)=> requireAuthThenGo(e, 'riwayat-desain.html'));
+
+/* ---- checkout modal: ubah isi cart_items jadi baris orders ---- */
+const checkoutOverlay = document.getElementById('checkoutOverlay');
+
+async function openCheckout(){
+  const user = await getCurrentUser();
+  if(!user){
+    openAuthRequired('Masuk dulu ya untuk checkout.');
+    return;
+  }
+  const items = await getCartItems();
+  if(items.length === 0){
+    alert('Keranjang kamu masih kosong.');
+    return;
+  }
+
+  // prefill dari profil kalau sudah pernah diisi
+  const profile = await getProfile();
+  document.getElementById('coRecipient').value = profile?.full_name || '';
+  document.getElementById('coPhone').value = profile?.phone || '';
+  document.getElementById('coAddress').value = '';
+  document.getElementById('coCity').value = '';
+  document.getElementById('coPostal').value = '';
+  document.getElementById('coNotes').value = '';
+  document.getElementById('checkoutMsg').textContent = '';
+  document.getElementById('checkoutMsg').className = 'checkout-msg';
+
+  const sizes = await getAllProductSizes();
+  const multiplierFor = (productTypeId, sizeCode) => {
+    const row = sizes.find(s => s.product_type_id === productTypeId && s.size_code === sizeCode);
+    return row ? Number(row.price_multiplier) : 1;
+  };
+  let total = 0;
+  const summaryRows = items.map(item => {
+    const pt = item.product_types;
+    const basePrice = pt ? Number(pt.base_price_per_pcs) : 0;
+    const mult = pt ? multiplierFor(pt.id, item.size_code) : 1;
+    const subtotal = basePrice * mult * item.quantity;
+    total += subtotal;
+    return `<div class="row"><span>${pt ? pt.name : 'Produk'} · ${item.size_code} · ${item.quantity} pcs</span><span>${rupiah(subtotal)}</span></div>`;
+  }).join('');
+  document.getElementById('checkoutSummary').innerHTML = summaryRows + `<div class="row total"><span>Estimasi Total</span><span>${rupiah(total)}</span></div>`;
+
+  checkoutOverlay.classList.add('open');
 }
 
-document.getElementById('navSignIn').addEventListener('click', handleSignIn);
-document.getElementById('navSignUp').addEventListener('click', handleSignIn);
+document.getElementById('cartCheckoutBtn').addEventListener('click', openCheckout);
+
+/* ---- tombol "Beli Langsung" di kartu katalog: buat orang yang tidak
+   butuh kustomisasi desain, langsung tambah ke keranjang dengan ukuran M
+   default (kuantitas = MOQ produk) lalu langsung buka modal checkout,
+   tanpa perlu mampir ke editor. ---- */
+let productTypeMapCache = null;
+async function getProductTypeMapCached(){
+  if(!productTypeMapCache) productTypeMapCache = await getProductTypeMap();
+  return productTypeMapCache;
+}
+
+document.querySelectorAll('[data-buy]').forEach(btn=>{
+  btn.addEventListener('click', async ()=>{
+    const user = await getCurrentUser();
+    if(!user){
+      openAuthRequired('Masuk dulu ya untuk membeli produk ini.');
+      return;
+    }
+
+    const originalLabel = btn.textContent;
+    btn.disabled = true;
+    btn.classList.add('is-loading');
+
+    const typeMap = await getProductTypeMapCached();
+    const productType = typeMap[btn.dataset.buy];
+    const { error } = await addToCart({
+      productTypeId: productType ? productType.id : null,
+      designId: null,
+      sizeCode: btn.dataset.size || 'M',
+      customDimensions: null,
+      quantity: parseInt(btn.dataset.qty, 10) || 1
+    });
+
+    btn.disabled = false;
+    btn.classList.remove('is-loading');
+    btn.textContent = originalLabel;
+
+    if(error){
+      alert('Gagal menambah ke keranjang: ' + error.message);
+      return;
+    }
+
+    await refreshCart(user);
+    openCheckout();
+  });
+});
+document.getElementById('checkoutCloseBtn').addEventListener('click', ()=> checkoutOverlay.classList.remove('open'));
+document.getElementById('checkoutCancelBtn').addEventListener('click', ()=> checkoutOverlay.classList.remove('open'));
+checkoutOverlay.addEventListener('click', (e)=>{ if(e.target === checkoutOverlay) checkoutOverlay.classList.remove('open'); });
+
+document.getElementById('checkoutForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const msg = document.getElementById('checkoutMsg');
+  const submitBtn = document.getElementById('checkoutSubmitBtn');
+  submitBtn.disabled = true;
+  submitBtn.classList.add('is-loading');
+  msg.textContent = '';
+  msg.className = 'checkout-msg';
+
+  const shippingAddress = {
+    recipient: document.getElementById('coRecipient').value.trim(),
+    phone: document.getElementById('coPhone').value.trim(),
+    address: document.getElementById('coAddress').value.trim(),
+    city: document.getElementById('coCity').value.trim(),
+    postal_code: document.getElementById('coPostal').value.trim() || null
+  };
+  const notes = document.getElementById('coNotes').value.trim() || null;
+
+  const { data, error } = await checkoutCart({ shippingAddress, notes });
+
+  submitBtn.disabled = false;
+  submitBtn.classList.remove('is-loading');
+
+  if(error){
+    msg.textContent = 'Gagal checkout: ' + error.message;
+    msg.className = 'checkout-msg error';
+    return;
+  }
+
+  msg.textContent = `✓ ${data.length} pesanan berhasil dibuat. Mengalihkan ke Lacak Pesanan…`;
+  msg.className = 'checkout-msg success';
+  const user = await getCurrentUser();
+  await refreshCart(user);
+  setTimeout(()=>{ window.location.href = 'lacak-pesanan.html'; }, 1200);
+});
+
+/* ---- Modal peringatan: aksi butuh login ---- */
+const authRequiredOverlay = document.getElementById('authRequiredOverlay');
+const authRequiredMsg = document.getElementById('authRequiredMsg');
+
+function openAuthRequired(message){
+  closeAllNavUtils();
+  authRequiredMsg.textContent = message || 'Kamu perlu masuk ke akun untuk melanjutkan aksi ini.';
+  authRequiredOverlay.classList.add('open');
+}
+function closeAuthRequired(){ authRequiredOverlay.classList.remove('open'); }
+
+document.getElementById('authRequiredCloseBtn').addEventListener('click', closeAuthRequired);
+document.getElementById('authRequiredCancelBtn').addEventListener('click', closeAuthRequired);
+document.getElementById('authRequiredSignInBtn').addEventListener('click', ()=>{
+  closeAuthRequired();
+  openAuthModal('signin');
+});
+authRequiredOverlay.addEventListener('click', (e)=>{ if(e.target === authRequiredOverlay) closeAuthRequired(); });
+
+/* ---- Modal Masuk / Daftar ---- */
+const authOverlay = document.getElementById('authOverlay');
+const authForm = document.getElementById('authForm');
+const authEmail = document.getElementById('authEmail');
+const authMsg = document.getElementById('authMsg');
+const authTitle = document.getElementById('authTitle');
+const authSub = document.getElementById('authSub');
+const authSubmitBtn = document.getElementById('authSubmitBtn');
+const authTabSignIn = document.getElementById('authTabSignIn');
+const authTabSignUp = document.getElementById('authTabSignUp');
+
+const AUTH_COPY = {
+  signin: { title: 'Masuk ke Akun Kamu', sub: 'Masukkan email kamu, kami akan kirim link masuk — tanpa perlu password.', submit: 'Kirim Link Masuk' },
+  signup: { title: 'Buat Akun Baru', sub: 'Masukkan email kamu untuk daftar — kami kirim link aktivasi, tanpa perlu password.', submit: 'Kirim Link Daftar' }
+};
+
+function setAuthTab(tab){
+  authTabSignIn.classList.toggle('active', tab === 'signin');
+  authTabSignUp.classList.toggle('active', tab === 'signup');
+  authForm.dataset.tab = tab;
+
+  authTitle.classList.remove('auth-swap');
+  authSub.classList.remove('auth-swap');
+  void authTitle.offsetWidth; // restart animasi fade
+  authTitle.textContent = AUTH_COPY[tab].title;
+  authSub.textContent = AUTH_COPY[tab].sub;
+  authTitle.classList.add('auth-swap');
+  authSub.classList.add('auth-swap');
+
+  authSubmitBtn.textContent = AUTH_COPY[tab].submit;
+  authMsg.textContent = '';
+  authMsg.className = 'checkout-msg';
+}
+
+function openAuthModal(tab){
+  closeAllNavUtils();
+  closeAuthRequired();
+  setAuthTab(tab || 'signin');
+  authEmail.value = '';
+  authOverlay.classList.add('open');
+  setTimeout(()=> authEmail.focus(), 50);
+}
+function closeAuthModal(){ authOverlay.classList.remove('open'); }
+
+authTabSignIn.addEventListener('click', ()=> setAuthTab('signin'));
+authTabSignUp.addEventListener('click', ()=> setAuthTab('signup'));
+document.getElementById('authCloseBtn').addEventListener('click', closeAuthModal);
+document.getElementById('authCancelBtn').addEventListener('click', closeAuthModal);
+authOverlay.addEventListener('click', (e)=>{ if(e.target === authOverlay) closeAuthModal(); });
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape'){ closeAuthModal(); closeAuthRequired(); }
+});
+
+authForm.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const email = authEmail.value.trim();
+  if(!email) return;
+
+  authSubmitBtn.disabled = true;
+  authSubmitBtn.classList.add('is-loading');
+  authMsg.textContent = '';
+  authMsg.className = 'checkout-msg';
+
+  const { error } = await signInWithEmail(email);
+
+  authSubmitBtn.disabled = false;
+  authSubmitBtn.classList.remove('is-loading');
+
+  if(error){
+    authMsg.textContent = 'Gagal mengirim link: ' + error.message;
+    authMsg.className = 'checkout-msg error';
+    return;
+  }
+  authMsg.textContent = `✓ Link sudah dikirim ke ${email}. Cek inbox (atau folder spam) kamu.`;
+  authMsg.className = 'checkout-msg success';
+});
+
+document.getElementById('navSignIn').addEventListener('click', (e)=>{ e.preventDefault(); openAuthModal('signin'); });
+document.getElementById('navSignUp').addEventListener('click', (e)=>{ e.preventDefault(); openAuthModal('signup'); });
 document.getElementById('navSignOut').addEventListener('click', async (e)=>{
   e.preventDefault();
   await signOut();
@@ -405,6 +732,18 @@ document.getElementById('navSignOut').addEventListener('click', async (e)=>{
 
 supabase.auth.onAuthStateChange(()=> refreshAccountUI());
 refreshAccountUI();
+
+// Dibuka lewat link "Masuk" dari halaman lain (mis. editor.html di tab
+// baru) via ?auth=signin / ?auth=signup -> langsung buka modal yang sesuai
+// tanpa perlu klik dua kali. Query string dibersihkan lagi supaya refresh
+// halaman tidak membuka modal berulang.
+const authParam = new URLSearchParams(window.location.search).get('auth');
+if(authParam === 'signin' || authParam === 'signup'){
+  openAuthModal(authParam);
+  const cleanUrl = new URL(window.location.href);
+  cleanUrl.searchParams.delete('auth');
+  window.history.replaceState({}, '', cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
+}
 
 /* ---- utility nav dropdowns (Bantuan / Tentang / Akun Saya) ---- */
 const NAV_UTIL_IDS = ['navHelp','navAbout','navAccount','navCart'];
