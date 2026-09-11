@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Dashboard — Admin Tandur</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="admin-scrim" id="scrim"></div>
+<div class="admin-shell">
+
+  <aside class="admin-sidebar" id="sidebar">
+    <div class="admin-logo">
+      <img src="../assets/logo/tandur.png" alt="Tandur">
+      <div><div class="lbl">Admin</div></div>
+    </div>
+    <nav class="admin-nav">
+      <a href="dashboard.html" class="active">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="riwayat-timbang.html">
+        <svg viewBox="0 0 24 24"><path d="M4 19h16"/><rect x="6" y="10" width="3" height="9" rx="0.5"/><rect x="10.5" y="6" width="3" height="13" rx="0.5"/><rect x="15" y="13" width="3" height="6" rx="0.5"/></svg>
+        Riwayat Timbang
+      </a>
+    </nav>
+    <div class="admin-side-foot">
+      <div class="admin-user">
+        <strong id="adminName">—</strong>
+        <span id="adminEmail"></span>
+      </div>
+      <button class="admin-logout" id="logoutBtn">Keluar</button>
+    </div>
+  </aside>
+
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button class="admin-menu-btn" id="menuBtn" aria-label="Buka menu">
+          <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18" stroke-linecap="round"/></svg>
+        </button>
+        <div>
+          <h1>Dashboard</h1>
+          <div class="sub">Ringkasan pengumpulan limbah dari seluruh kelompok tani</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-content" id="content">
+      <div class="admin-loading" id="loading">Memuat data…</div>
+    </div>
+  </main>
+
+</div>
+
+<script type="module">
+import { requireAdmin, adminLogout } from './admin-auth.js';
+import { getDashboardStats } from './admin-data.js';
+
+const content = document.getElementById('content');
+const loading = document.getElementById('loading');
+
+// ---------- sidebar toggle (mobile) ----------
+const sidebar = document.getElementById('sidebar');
+const scrim = document.getElementById('scrim');
+document.getElementById('menuBtn').addEventListener('click', () => {
+  sidebar.classList.add('open'); scrim.classList.add('open');
+});
+scrim.addEventListener('click', () => {
+  sidebar.classList.remove('open'); scrim.classList.remove('open');
+});
+
+// ---------- auth guard ----------
+const admin = await requireAdmin();
+if (admin) {
+  document.getElementById('adminName').textContent = admin.full_name || 'Admin';
+  document.getElementById('adminEmail').textContent = admin.email || '';
+  document.getElementById('logoutBtn').addEventListener('click', adminLogout);
+  init();
+}
+
+function fmtKg(n){
+  return Number(n).toLocaleString('id-ID', { maximumFractionDigits: 1 });
+}
+function fmtDate(d){
+  if (!d) return '—';
+  return new Intl.DateTimeFormat('id-ID', { day:'2-digit', month:'short', year:'numeric' }).format(new Date(d));
+}
+
+async function init(){
+  const stats = await getDashboardStats();
+  loading.remove();
+
+  const statGrid = document.createElement('div');
+  statGrid.className = 'stat-grid';
+  statGrid.innerHTML = `
+    <div class="stat-card featured">
+      <span class="tag">Sepanjang waktu</span>
+      <div class="lbl">Total limbah terkumpul</div>
+      <div class="val">${fmtKg(stats.totalKg)}<small>kg</small></div>
+    </div>
+    <div class="stat-card">
+      <div class="lbl">Kelompok tani</div>
+      <div class="val">${stats.totalKelompok}</div>
+    </div>
+    <div class="stat-card">
+      <div class="lbl">Petani terdaftar</div>
+      <div class="val">${stats.totalPetani}</div>
+    </div>
+  `;
+  content.appendChild(statGrid);
+
+  // ---- panel: tren setoran ----
+  const trendPanel = document.createElement('div');
+  trendPanel.className = 'panel';
+  if (stats.trend.length === 0) {
+    trendPanel.innerHTML = `
+      <h2>Tren Setoran</h2>
+      <div class="ph-sub">Total limbah (kg) per tanggal</div>
+      <div class="empty-state">Belum ada setoran tercatat.</div>
+    `;
+  } else {
+    trendPanel.innerHTML = `
+      <h2>Tren Setoran</h2>
+      <div class="ph-sub">Total limbah (kg) per tanggal</div>
+      <div class="chart-wrap trend"><canvas id="trendChart"></canvas></div>
+    `;
+  }
+  content.appendChild(trendPanel);
+
+  const panelRow = document.createElement('div');
+  panelRow.className = 'panel-row';
+
+  // ---- panel: kelompok tani teratas ----
+  const topPanel = document.createElement('div');
+  topPanel.className = 'panel';
+  if (stats.topKelompok.length === 0) {
+    topPanel.innerHTML = `
+      <h2>Kelompok Tani Teratas</h2>
+      <div class="ph-sub">Berdasarkan total limbah terkumpul</div>
+      <div class="empty-state">Belum ada data kelompok tani.</div>
+    `;
+  } else {
+    topPanel.innerHTML = `
+      <h2>Kelompok Tani Teratas</h2>
+      <div class="ph-sub">Berdasarkan total limbah terkumpul</div>
+      <div class="chart-wrap"><canvas id="topChart"></canvas></div>
+    `;
+  }
+  panelRow.appendChild(topPanel);
+
+  // ---- panel: setoran terbaru ----
+  const recentPanel = document.createElement('div');
+  recentPanel.className = 'panel';
+  if (stats.recentSetoran.length === 0) {
+    recentPanel.innerHTML = `
+      <h2>Setoran Terbaru</h2>
+      <div class="ph-sub">6 setoran limbah paling baru dicatat</div>
+      <div class="empty-state">Belum ada setoran tercatat.</div>
+    `;
+  } else {
+    const rows = stats.recentSetoran.map(s => `
+      <div class="recent-row">
+        <span>${escapeHtml(s.namaPetani)}<div class="grp">${escapeHtml(s.namaKelompok)}</div></span>
+        <span class="dt">${fmtDate(s.tanggal)}</span>
+        <span class="kg">${fmtKg(s.beratKg)} kg</span>
+      </div>
+    `).join('');
+    recentPanel.innerHTML = `
+      <h2>Setoran Terbaru</h2>
+      <div class="ph-sub">6 setoran limbah paling baru dicatat</div>
+      ${rows}
+    `;
+  }
+  panelRow.appendChild(recentPanel);
+
+  content.appendChild(panelRow);
+
+  renderCharts(stats);
+}
+
+// ---------- warna & style chart, selaras dengan palet admin.css ----------
+const CHART_NAVY = '#0E3A63';
+const CHART_KRAFT = '#2E9C4B';
+const CHART_KRAFT_FILL = 'rgba(46,156,75,0.12)';
+const CHART_INK_SOFT = 'rgba(27,23,16,0.55)';
+const CHART_LINE = 'rgba(27,23,16,0.1)';
+const CHART_FONT = "'IBM Plex Mono', monospace";
+
+function renderCharts(stats){
+  if (stats.trend.length > 0) {
+    const ctx = document.getElementById('trendChart');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: stats.trend.map(t => fmtDate(t.tanggal)),
+        datasets: [{
+          label: 'Total kg',
+          data: stats.trend.map(t => t.totalKg),
+          borderColor: CHART_KRAFT,
+          backgroundColor: CHART_KRAFT_FILL,
+          fill: true,
+          tension: 0.25,
+          pointRadius: 2.5,
+          pointBackgroundColor: CHART_KRAFT,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { font: { family: CHART_FONT, size: 10.5 }, color: CHART_INK_SOFT }, grid: { display: false } },
+          y: { beginAtZero: true, ticks: { font: { family: CHART_FONT, size: 10.5 }, color: CHART_INK_SOFT }, grid: { color: CHART_LINE } }
+        }
+      }
+    });
+  }
+
+  if (stats.topKelompok.length > 0) {
+    const ctx = document.getElementById('topChart');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: stats.topKelompok.map(k => k.nama),
+        datasets: [{
+          label: 'Total kg',
+          data: stats.topKelompok.map(k => k.totalKg),
+          backgroundColor: CHART_NAVY,
+          borderRadius: 2,
+          maxBarThickness: 34
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { beginAtZero: true, ticks: { font: { family: CHART_FONT, size: 10.5 }, color: CHART_INK_SOFT }, grid: { color: CHART_LINE } },
+          y: { ticks: { font: { family: "'IBM Plex Sans', sans-serif", size: 12.5 }, color: '#1B1710' }, grid: { display: false } }
+        }
+      }
+    });
+  }
+}
+
+function escapeHtml(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+</script>
+</body>
+</html>

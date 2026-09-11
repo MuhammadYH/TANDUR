@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Riwayat Timbang — Admin Tandur</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<div class="admin-scrim" id="scrim"></div>
+<div class="admin-shell">
+
+  <aside class="admin-sidebar" id="sidebar">
+    <div class="admin-logo">
+      <img src="../assets/logo/tandur.png" alt="Tandur">
+      <div><div class="lbl">Admin</div></div>
+    </div>
+    <nav class="admin-nav">
+      <a href="dashboard.html">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="riwayat-timbang.html" class="active">
+        <svg viewBox="0 0 24 24"><path d="M4 19h16"/><rect x="6" y="10" width="3" height="9" rx="0.5"/><rect x="10.5" y="6" width="3" height="13" rx="0.5"/><rect x="15" y="13" width="3" height="6" rx="0.5"/></svg>
+        Riwayat Timbang
+      </a>
+    </nav>
+    <div class="admin-side-foot">
+      <div class="admin-user">
+        <strong id="adminName">—</strong>
+        <span id="adminEmail"></span>
+      </div>
+      <button class="admin-logout" id="logoutBtn">Keluar</button>
+    </div>
+  </aside>
+
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button class="admin-menu-btn" id="menuBtn" aria-label="Buka menu">
+          <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18" stroke-linecap="round"/></svg>
+        </button>
+        <div>
+          <h1>Riwayat Timbang</h1>
+          <div class="sub">Rekap setoran limbah per kelompok tani</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-content" id="content">
+      <div class="admin-loading" id="loading">Memuat data…</div>
+    </div>
+  </main>
+
+</div>
+
+<script type="module">
+import { requireAdmin, adminLogout } from './admin-auth.js';
+import { getRiwayatTimbangGrouped } from './admin-data.js';
+
+const content = document.getElementById('content');
+const loading = document.getElementById('loading');
+
+// ---------- sidebar toggle (mobile) ----------
+const sidebar = document.getElementById('sidebar');
+const scrim = document.getElementById('scrim');
+document.getElementById('menuBtn').addEventListener('click', () => {
+  sidebar.classList.add('open'); scrim.classList.add('open');
+});
+scrim.addEventListener('click', () => {
+  sidebar.classList.remove('open'); scrim.classList.remove('open');
+});
+
+// ---------- auth guard ----------
+let ALL_GROUPS = [];
+
+const admin = await requireAdmin();
+if (admin) {
+  document.getElementById('adminName').textContent = admin.full_name || 'Admin';
+  document.getElementById('adminEmail').textContent = admin.email || '';
+  document.getElementById('logoutBtn').addEventListener('click', adminLogout);
+  init();
+}
+
+function fmtKg(n){
+  return Number(n).toLocaleString('id-ID', { maximumFractionDigits: 1 });
+}
+function escapeHtml(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function init(){
+  ALL_GROUPS = await getRiwayatTimbangGrouped();
+  loading.remove();
+
+  const toolbar = document.createElement('div');
+  toolbar.className = 'rt-toolbar';
+  toolbar.innerHTML = `
+    <input type="text" id="searchInput" placeholder="Cari kelompok tani atau lokasi…">
+    <span class="count" id="countLbl"></span>
+  `;
+  content.appendChild(toolbar);
+
+  const list = document.createElement('div');
+  list.id = 'groupList';
+  content.appendChild(list);
+
+  render(ALL_GROUPS);
+
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    const filtered = !q ? ALL_GROUPS : ALL_GROUPS.filter(k =>
+      k.nama.toLowerCase().includes(q) || (k.lokasi || '').toLowerCase().includes(q)
+    );
+    render(filtered);
+  });
+}
+
+function render(groups){
+  const list = document.getElementById('groupList');
+  document.getElementById('countLbl').textContent = groups.length + ' kelompok tani';
+
+  if (groups.length === 0) {
+    list.innerHTML = `<div class="panel"><div class="empty-state">Belum ada kelompok tani yang cocok / tercatat.</div></div>`;
+    return;
+  }
+
+  list.innerHTML = groups.map((k, idx) => `
+    <div class="grp-card${idx === 0 ? ' open' : ''}" data-id="${k.id}">
+      <div class="grp-head">
+        <span class="rank">${String(idx + 1).padStart(2, '0')}</span>
+        <svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="titles">
+          <h3>${escapeHtml(k.nama)}</h3>
+          <div class="loc">${escapeHtml(k.lokasi || 'Lokasi belum diisi')}</div>
+        </div>
+        <div class="meta">
+          <div class="m"><div class="n">${k.jumlahPetani}</div><div class="l">Petani</div></div>
+          <div class="m"><div class="n">${fmtKg(k.totalKg)}</div><div class="l">Total Kg</div></div>
+        </div>
+      </div>
+      <div class="grp-body">
+        ${k.petani.length === 0 ? `<div class="grp-empty">Belum ada petani terdaftar di kelompok ini.</div>` : `
+        <table class="petani-table">
+          <thead>
+            <tr><th>Nama Petani</th><th class="num">Jumlah Setoran</th><th class="num">Total Limbah (kg)</th></tr>
+          </thead>
+          <tbody>
+            ${k.petani.map(p => `
+              <tr>
+                <td data-label="Nama Petani">${escapeHtml(p.nama)}</td>
+                <td class="num" data-label="Jumlah Setoran">${p.jumlahSetoran}</td>
+                <td class="num" data-label="Total Limbah (kg)">${fmtKg(p.totalKg)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        `}
+      </div>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.grp-head').forEach(head => {
+    head.addEventListener('click', () => head.closest('.grp-card').classList.toggle('open'));
+  });
+}
+</script>
+</body>
+</html>

@@ -285,8 +285,11 @@
   .die-panel{ fill:var(--paper-2); stroke:var(--ink); stroke-width:1.4; }
   .die-fold{ stroke:var(--kraft); stroke-width:1; stroke-dasharray:4 4; fill:none; }
   .die-cut{ stroke:var(--ink); stroke-width:1.4; fill:none; }
-  .die-label{ font-family:'IBM Plex Mono',monospace; font-size:9px; fill:var(--kraft-dark); }
+  .die-label{ font-family:'IBM Plex Mono',monospace; font-size:9px; fill:var(--kraft-dark); letter-spacing:.03em; }
   .die-front{ fill: var(--kraft); opacity:0.9; }
+  text.die-front{ fill: var(--paper-2); opacity:1; font-weight:600; }
+  .die-net{ stroke-linejoin:round; }
+  .die-glue-hatch{ stroke:var(--ink); stroke-width:0.8; opacity:0.35; }
 
   .how{ padding:88px 0; border-bottom:1px solid var(--line); }
   .how .head{ display:flex; justify-content:space-between; align-items:flex-end; gap:24px; margin-bottom:56px; flex-wrap:wrap; }
