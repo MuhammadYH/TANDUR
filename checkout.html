@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkout — Tandur</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .acc-top{ padding:34px 0 0; }
+  .acc-back{ display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-family:'IBM Plex Mono',monospace; text-decoration:none; color:#6b6656; margin-bottom:18px; }
+  .acc-back:hover{ color:var(--ink); }
+  .acc-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:26px; flex-wrap:wrap; }
+  .acc-head h1{ font-size:34px; }
+  .acc-body{ padding-bottom:80px; }
+  .acc-empty{ background:#fff; border:1px dashed var(--line-strong); border-radius:8px; padding:44px 28px; text-align:center; max-width:480px; }
+  .acc-empty p{ color:#6b6656; font-size:14px; margin:8px 0 18px; }
+
+  .checkout-grid{ display:grid; grid-template-columns: 1.25fr 0.85fr; gap:32px; align-items:start; }
+  .checkout-panel{ background:#fff; border:1px solid var(--line); border-radius:8px; padding:26px 28px; }
+  .checkout-panel h3{ font-size:19px; margin-bottom:4px; }
+  .checkout-panel .sub{ font-size:12.5px; color:#6b6656; margin-bottom:22px; }
+  .checkout-side{ position:sticky; top:20px; }
+  .checkout-side .checkout-panel h3{ margin-bottom:14px; }
+  .checkout-item-row{ display:flex; flex-direction:column; gap:8px; padding:12px 0; border-bottom:1px dashed var(--line); font-size:13px; }
+  .checkout-item-row:last-of-type{ border-bottom:none; }
+  .checkout-item-row .name{ font-weight:600; display:block; }
+  .checkout-item-row .meta{ display:block; font-size:11.5px; color:#8f8a78; font-weight:400; margin-top:2px; }
+  .ci-bottom{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .ci-qty{ display:flex; align-items:center; gap:6px; }
+  .qty-btn{ width:24px; height:24px; border:1px solid var(--line-strong); border-radius:5px; background:#fff; cursor:pointer; font-size:14px; line-height:1; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; color:var(--ink); padding:0; }
+  .qty-btn:hover{ background:var(--paper-2); }
+  .qty-input{ width:48px; text-align:center; padding:4px 2px; border:1px solid var(--line-strong); border-radius:5px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--ink); background:var(--paper); -moz-appearance:textfield; }
+  .qty-input::-webkit-outer-spin-button, .qty-input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  .ci-right{ display:flex; align-items:center; gap:10px; }
+  .ci-subtotal{ font-weight:600; font-family:'IBM Plex Mono',monospace; font-size:12.5px; white-space:nowrap; }
+  .ci-remove{ width:22px; height:22px; border:none; background:none; color:#8f8a78; font-size:16px; cursor:pointer; line-height:1; padding:0; }
+  .ci-remove:hover{ color:#C23B3B; }
+  .checkout-pcs-row{ display:flex; justify-content:space-between; padding-top:10px; font-size:12.5px; color:#6b6656; }
+  .checkout-total-row{ display:flex; justify-content:space-between; padding-top:10px; margin-top:4px; border-top:1px solid var(--line-strong); font-weight:700; font-size:15px; }
+  .checkout-side .checkout-actions{ margin-top:18px; }
+  .checkout-side .checkout-msg{ text-align:right; }
+
+  @media (max-width: 880px){
+    .checkout-grid{ grid-template-columns:1fr; }
+    .checkout-side{ position:static; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav-top wrap" style="justify-content:space-between;">
+    <a href="index.html" class="logo" style="text-decoration:none;"><img src="assets/logo/tandur.png" alt="Tandur"></a>
+    <div id="acEmailWrap" class="regbar mono" style="font-size:12.5px;"></div>
+  </div>
+</header>
+
+<section class="acc-top wrap">
+  <a href="index.html" class="acc-back">← Kembali ke Beranda</a>
+  <div class="acc-head">
+    <h1>Checkout.</h1>
+  </div>
+</section>
+
+<section class="acc-body wrap">
+
+  <div id="loggedOutState" class="acc-empty" style="display:none;">
+    <p>Kamu perlu masuk dulu untuk melanjutkan checkout.</p>
+    <a href="index.html" class="btn btn-solid">Ke Beranda untuk Masuk</a>
+  </div>
+
+  <div id="emptyCartState" class="acc-empty" style="display:none;">
+    <p>Keranjang kamu masih kosong. Yuk pilih produk dari katalog dulu.</p>
+    <a href="index.html#katalog" class="btn btn-solid">Ke Katalog Produk</a>
+  </div>
+
+  <div id="checkoutGrid" class="checkout-grid" style="display:none;">
+    <div class="checkout-panel">
+      <h3>Alamat Pengiriman</h3>
+      <div class="sub">Isi alamat tujuan, lalu konfirmasi untuk mengubah keranjang jadi pesanan.</div>
+      <form id="checkoutForm">
+        <div class="checkout-field">
+          <label>Nama Penerima</label>
+          <input type="text" id="coRecipient" required>
+        </div>
+        <div class="checkout-field">
+          <label>Nomor Telepon</label>
+          <input type="text" id="coPhone" required>
+        </div>
+        <div class="checkout-field">
+          <label>Alamat Lengkap</label>
+          <textarea id="coAddress" required placeholder="Jalan, nomor, kelurahan, kecamatan"></textarea>
+        </div>
+        <div class="checkout-row2">
+          <div class="checkout-field">
+            <label>Kota</label>
+            <input type="text" id="coCity" required>
+          </div>
+          <div class="checkout-field">
+            <label>Kode Pos</label>
+            <input type="text" id="coPostal">
+          </div>
+        </div>
+        <div class="checkout-field" style="margin-bottom:0;">
+          <label>Catatan (opsional)</label>
+          <textarea id="coNotes" placeholder="Instruksi khusus untuk tim produksi/pengiriman"></textarea>
+        </div>
+      </form>
+    </div>
+
+    <div class="checkout-side">
+      <div class="checkout-panel">
+        <h3>Ringkasan Pesanan</h3>
+        <div id="checkoutItems"></div>
+        <div class="checkout-pcs-row"><span>Total Pcs</span><span id="checkoutTotalPcs">0 pcs</span></div>
+        <div class="checkout-total-row"><span>Estimasi Total</span><span id="checkoutTotal">Rp0</span></div>
+        <div class="checkout-actions">
+          <a href="index.html" class="btn">Batal</a>
+          <button type="submit" form="checkoutForm" class="btn btn-solid" id="checkoutSubmitBtn">Konfirmasi Pesanan</button>
+        </div>
+        <div class="checkout-msg" id="checkoutMsg"></div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <div class="logo" style="margin-bottom:14px;"><img src="assets/logo/tandur.png" alt="Tandur" style="height:24px;"></div>
+      <p style="font-size:13px; color:#a8a390; max-width:32ch;">Platform desain kemasan makanan custom untuk resto, kafe, dan brand F&amp;B.</p>
+    </div>
+    <div><h4>Akun</h4><ul><li><a href="profil.html">Profil</a></li><li><a href="lacak-pesanan.html">Lacak Pesanan</a></li><li><a href="riwayat-desain.html">Riwayat Desain</a></li></ul></div>
+    <div><h4>Produk</h4><ul><li><a href="index.html#katalog">Katalog</a></li><li><a href="editor.html">Editor Desain</a></li></ul></div>
+    <div><h4>Spesifikasi</h4><ul class="mono" style="font-size:12px;"><li>MOQ mulai 50 pcs</li><li>Cetak CMYK full color</li><li>Produksi 5–7 hari kerja</li></ul></div>
+  </div>
+  <div class="wrap foot-bottom"><span>© 2026 Tandur. Semua hak dilindungi.</span><span>DIELINE NO. 00214-B · REV 3</span></div>
+</footer>
+
+<script type="module">
+import { supabase, getCurrentUser, signOut, getCartItems, removeCartItem, updateCartItemQuantity, getAllProductSizes, getProfile, checkoutCart, addToCart, getProductTypeMap, getDesignById } from './supabase-client.js';
+
+const rupiah = (n) => 'Rp' + Math.round(n).toLocaleString('id-ID');
+
+/* ---- kalau datang dari tombol "Beli Langsung" (index.html / riwayat-desain.html),
+   parameter URL ini menambahkan item ke keranjang sekali sebelum ringkasan
+   dirender. URL langsung dibersihkan supaya refresh halaman tidak menambah
+   item dua kali. ---- */
+async function handleDirectBuyParams(){
+  const params = new URLSearchParams(window.location.search);
+  const buySlug = params.get('buy');
+  const designId = params.get('design_id');
+  if(!buySlug && !designId) return;
+
+  const qty = parseInt(params.get('qty'), 10) || 50;
+  const size = params.get('size') || 'M';
+  window.history.replaceState({}, '', 'checkout.html');
+
+  if(buySlug){
+    const typeMap = await getProductTypeMap();
+    const productType = typeMap[buySlug];
+    if(productType){
+      await addToCart({ productTypeId: productType.id, designId: null, sizeCode: size, customDimensions: null, quantity: qty });
+    }
+  } else if(designId){
+    const design = await getDesignById(designId);
+    if(design){
+      await addToCart({
+        productTypeId: design.product_type_id,
+        designId: design.id,
+        sizeCode: design.size_code,
+        customDimensions: design.custom_dimensions,
+        quantity: qty
+      });
+    }
+  }
+}
+
+/* ---- state keranjang dipegang lokal di sini (cartItemsCache) supaya
+   tombol +/- dan input qty bisa langsung mengubah tampilan & total tanpa
+   perlu fetch ulang ke server tiap kali; tiap perubahan tetap disimpan ke
+   database lewat updateCartItemQuantity, dan submit menunggu semuanya
+   selesai tersimpan lebih dulu (lihat pendingQtyUpdates). ---- */
+let cartItemsCache = [];
+let sizesCache = [];
+let pendingQtyUpdates = new Map(); // itemId -> Promise, biar submit bisa menunggu semuanya selesai tersimpan
+
+function multiplierFor(productTypeId, sizeCode){
+  const row = sizesCache.find(s => s.product_type_id === productTypeId && s.size_code === sizeCode);
+  return row ? Number(row.price_multiplier) : 1;
+}
+
+function subtotalFor(item){
+  const pt = item.product_types;
+  const basePrice = pt ? Number(pt.base_price_per_pcs) : 0;
+  const mult = pt ? multiplierFor(pt.id, item.size_code) : 1;
+  return basePrice * mult * item.quantity;
+}
+
+function renderItemsList(){
+  if(cartItemsCache.length === 0){
+    document.getElementById('emptyCartState').style.display = 'block';
+    document.getElementById('checkoutGrid').style.display = 'none';
+    return;
+  }
+  document.getElementById('emptyCartState').style.display = 'none';
+  document.getElementById('checkoutGrid').style.display = 'grid';
+
+  let total = 0;
+  let totalPcs = 0;
+  document.getElementById('checkoutItems').innerHTML = cartItemsCache.map(item => {
+    const pt = item.product_types;
+    const subtotal = subtotalFor(item);
+    total += subtotal;
+    totalPcs += item.quantity;
+    return `
+      <div class="checkout-item-row" data-id="${item.id}">
+        <span class="name">${pt ? pt.name : 'Produk'}<span class="meta">Ukuran ${item.size_code}</span></span>
+        <div class="ci-bottom">
+          <div class="ci-qty">
+            <button type="button" class="qty-btn" data-action="dec" data-id="${item.id}" aria-label="Kurangi jumlah">−</button>
+            <input type="number" class="qty-input" min="1" value="${item.quantity}" data-id="${item.id}" aria-label="Jumlah pcs">
+            <button type="button" class="qty-btn" data-action="inc" data-id="${item.id}" aria-label="Tambah jumlah">+</button>
+          </div>
+          <div class="ci-right">
+            <span class="ci-subtotal">${rupiah(subtotal)}</span>
+            <button type="button" class="ci-remove" data-id="${item.id}" aria-label="Hapus item">×</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+  document.getElementById('checkoutTotalPcs').textContent = totalPcs.toLocaleString('id-ID') + ' pcs';
+  document.getElementById('checkoutTotal').textContent = rupiah(total);
+
+  bindItemControls();
+}
+
+function applyQtyChange(itemId, nextQty){
+  if(!Number.isFinite(nextQty) || nextQty < 1) nextQty = 1;
+  const item = cartItemsCache.find(i => i.id === itemId);
+  if(!item) return;
+  item.quantity = nextQty;
+  renderItemsList();
+  pendingQtyUpdates.set(itemId, updateCartItemQuantity(itemId, nextQty));
+}
+
+async function removeItem(itemId){
+  pendingQtyUpdates.delete(itemId);
+  cartItemsCache = cartItemsCache.filter(i => i.id !== itemId);
+  renderItemsList();
+  await removeCartItem(itemId);
+}
+
+function bindItemControls(){
+  document.querySelectorAll('.qty-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const item = cartItemsCache.find(i => i.id === btn.dataset.id);
+      if(!item) return;
+      applyQtyChange(btn.dataset.id, btn.dataset.action === 'inc' ? item.quantity + 1 : item.quantity - 1);
+    });
+  });
+  document.querySelectorAll('.qty-input').forEach(input=>{
+    input.addEventListener('change', ()=> applyQtyChange(input.dataset.id, parseInt(input.value, 10)));
+  });
+  document.querySelectorAll('.ci-remove').forEach(btn=>{
+    btn.addEventListener('click', ()=> removeItem(btn.dataset.id));
+  });
+}
+
+async function renderCheckout(){
+  cartItemsCache = await getCartItems();
+
+  if(cartItemsCache.length === 0){
+    document.getElementById('emptyCartState').style.display = 'block';
+    document.getElementById('checkoutGrid').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('emptyCartState').style.display = 'none';
+  document.getElementById('checkoutGrid').style.display = 'grid';
+
+  // prefill dari profil kalau sudah pernah diisi
+  const profile = await getProfile();
+  document.getElementById('coRecipient').value = profile?.full_name || '';
+  document.getElementById('coPhone').value = profile?.phone || '';
+  document.getElementById('coAddress').value = '';
+  document.getElementById('coCity').value = '';
+  document.getElementById('coPostal').value = '';
+  document.getElementById('coNotes').value = '';
+  document.getElementById('checkoutMsg').textContent = '';
+  document.getElementById('checkoutMsg').className = 'checkout-msg';
+
+  sizesCache = await getAllProductSizes();
+  renderItemsList();
+}
+
+document.getElementById('checkoutForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const msg = document.getElementById('checkoutMsg');
+  const submitBtn = document.getElementById('checkoutSubmitBtn');
+  submitBtn.disabled = true;
+  submitBtn.classList.add('is-loading');
+  msg.textContent = '';
+  msg.className = 'checkout-msg';
+
+  // pastikan semua perubahan qty (+/−) sudah tersimpan ke server dulu,
+  // sebelum keranjang dibaca ulang dan diubah jadi pesanan.
+  await Promise.all(pendingQtyUpdates.values());
+
+  const shippingAddress = {
+    recipient: document.getElementById('coRecipient').value.trim(),
+    phone: document.getElementById('coPhone').value.trim(),
+    address: document.getElementById('coAddress').value.trim(),
+    city: document.getElementById('coCity').value.trim(),
+    postal_code: document.getElementById('coPostal').value.trim() || null
+  };
+  const notes = document.getElementById('coNotes').value.trim() || null;
+
+  const { data, error } = await checkoutCart({ shippingAddress, notes });
+
+  submitBtn.disabled = false;
+  submitBtn.classList.remove('is-loading');
+
+  if(error){
+    msg.textContent = 'Gagal checkout: ' + error.message;
+    msg.className = 'checkout-msg error';
+    return;
+  }
+
+  msg.textContent = `✓ ${data.length} pesanan berhasil dibuat. Mengalihkan ke Lacak Pesanan…`;
+  msg.className = 'checkout-msg success';
+  setTimeout(()=>{ window.location.href = 'lacak-pesanan.html'; }, 1200);
+});
+
+async function init(){
+  const user = await getCurrentUser();
+  const emailWrap = document.getElementById('acEmailWrap');
+
+  if(!user){
+    document.getElementById('loggedOutState').style.display = 'block';
+    emailWrap.innerHTML = '<a href="index.html" style="text-decoration:none;">Masuk →</a>';
+    return;
+  }
+
+  emailWrap.innerHTML = `<span>${user.email}</span> &nbsp;·&nbsp; <a href="#" id="acSignOut" style="text-decoration:none;">Keluar</a>`;
+  document.getElementById('acSignOut').addEventListener('click', async (e)=>{
+    e.preventDefault();
+    await signOut();
+    window.location.href = 'index.html';
+  });
+
+  await handleDirectBuyParams();
+  await renderCheckout();
+}
+
+supabase.auth.onAuthStateChange(()=> init());
+init();
+</script>
+
+</body>
+</html>

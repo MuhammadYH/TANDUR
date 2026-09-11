@@ -244,6 +244,20 @@ export async function getDesigns() {
   return data;
 }
 
+// Satu desain (dengan product_type_id ikut terbawa), dipakai checkout.html
+// waktu tombol "Beli Langsung" di riwayat-desain.html diklik — supaya desain
+// yang sudah tersimpan bisa langsung ditambahkan ke keranjang tanpa perlu
+// mampir ke editor.
+export async function getDesignById(designId) {
+  const { data, error } = await supabase
+    .from('designs')
+    .select('id, name, product_type_id, size_code, custom_dimensions, thumbnail_url, product_types ( id, slug, name, base_price_per_pcs )')
+    .eq('id', designId)
+    .single();
+  if (error || !data) return null;
+  return data;
+}
+
 export async function deleteDesign(designId) {
   const { error } = await supabase.from('designs').delete().eq('id', designId);
   return { error };

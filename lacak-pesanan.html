@@ -49,6 +49,27 @@
   .proof-status.rejected{ background:rgba(194,59,59,0.12); color:#C23B3B; }
   .chev-toggle{ transition:transform .15s; flex:none; }
   .order-card.open .chev-toggle{ transform:rotate(180deg); }
+
+  .track-wrap{ margin-top:14px; padding-top:14px; border-top:1px dashed var(--line); }
+  .track-title{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; color:#8f8a78; margin-bottom:10px; }
+  .track-now{ display:flex; align-items:center; gap:8px; background:rgba(35,139,210,0.08); border:1px solid rgba(35,139,210,0.25); border-radius:6px; padding:9px 12px; margin-bottom:14px; font-size:12.5px; }
+  .track-now.done{ background:rgba(46,139,79,0.08); border-color:rgba(46,139,79,0.25); }
+  .track-now b{ font-weight:700; }
+  .track-now .dot{ width:7px; height:7px; border-radius:50%; background:#1B63AE; flex:none; animation:trackpulse 1.6s ease-in-out infinite; }
+  .track-now.done .dot{ background:#2E8B4F; animation:none; }
+  @keyframes trackpulse{ 0%,100%{ opacity:1; } 50%{ opacity:.35; } }
+  .track-list{ list-style:none; margin:0; padding:0; }
+  .track-item{ position:relative; padding:0 0 16px 22px; }
+  .track-item:last-child{ padding-bottom:0; }
+  .track-item::before{ content:''; position:absolute; left:4px; top:3px; width:9px; height:9px; border-radius:50%; background:var(--paper); border:2px solid #c9c3ae; }
+  .track-item::after{ content:''; position:absolute; left:8px; top:14px; width:1px; bottom:-2px; background:var(--line-strong); }
+  .track-item:last-child::after{ display:none; }
+  .track-item.done::before{ border-color:#2E8B4F; background:#2E8B4F; }
+  .track-item.current::before{ border-color:#1B63AE; background:#1B63AE; }
+  .track-city{ font-weight:700; font-size:12.5px; }
+  .track-label{ font-size:12px; color:#6b6656; margin-top:1px; }
+  .track-time{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#8f8a78; margin-top:3px; }
+  .proof-note{ color:#8f8a78; font-size:12.5px; }
 </style>
 </head>
 <body>
@@ -104,6 +125,7 @@ import { supabase, getCurrentUser, signOut, getOrders, getOrderProofs } from './
 
 const rupiah = (n) => 'Rp' + Math.round(n).toLocaleString('id-ID');
 const tanggal = (iso) => new Date(iso).toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' });
+const waktu = (iso) => new Date(iso).toLocaleString('id-ID', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
 
 const STATUS_LABEL = {
   draft: 'Draft', awaiting_proof: 'Menunggu Proof', proof_review: 'Proof Direview',
@@ -112,6 +134,142 @@ const STATUS_LABEL = {
 const PROOF_STATUS_LABEL = {
   pending: 'Menunggu Review', approved: 'Disetujui', revision_requested: 'Revisi Diminta', rejected: 'Ditolak'
 };
+
+// =====================================================================
+// Simulasi progres status & pelacakan pengiriman (DUMMY).
+//
+// Kenapa perlu ini: order baru selalu dibuat dengan status
+// 'awaiting_proof' (lihat checkoutCart di supabase-client.js), tapi
+// belum ada alur admin di project ini yang pernah meng-update status
+// order atau mengisi order_proofs — jadi tanpa simulasi ini, order akan
+// SELAMANYA menampilkan "Menunggu Proof", persis keluhan yang diperbaiki
+// di sini. Untuk sementara (sampai ada panel admin proof/status
+// sungguhan), status & lokasi pengiriman diturunkan dari selisih waktu
+// sejak order dibuat — murni untuk tampilan, tidak menulis apa pun ke DB.
+//
+// Jeda dibuat dalam hitungan MENIT (bukan hari) supaya kelihatan
+// bergerak langsung setelah checkout, dan halaman ini auto-refresh
+// tampilannya tiap beberapa detik (lihat setInterval di bawah) — jadi
+// order tidak akan pernah lagi terlihat macet di "Menunggu Proof".
+// =====================================================================
+const STATUS_ORDER = ['draft','awaiting_proof','proof_review','in_production','shipped','completed'];
+const TRANSIT_HUBS = ['Surabaya','Semarang','Jakarta','Bandung','Yogyakarta','Malang','Denpasar'];
+
+// Ambang waktu (menit sejak order dibuat) tiap tahap.
+const STAGE_AT_MIN = { proof_review: 0.5, in_production: 2, shipped: 6, completed: 15 };
+
+function minutesSince(iso){
+  return (Date.now() - new Date(iso).getTime()) / 60000;
+}
+
+// Status final (cancelled) atau yang memang belum di-checkout (draft)
+// tidak disimulasikan — sisanya "berjalan maju" mengikuti umur order,
+// tapi tidak pernah mundur dari status asli yang tersimpan di DB (kalau
+// suatu saat memang ada admin yang set status manual, itu tetap dihormati
+// selama tidak lebih "mundur" dari hasil simulasi).
+function getEffectiveStatus(order){
+  if(order.status === 'cancelled' || order.status === 'draft') return order.status;
+  const m = minutesSince(order.created_at);
+  let simulated = 'awaiting_proof';
+  if(m >= STAGE_AT_MIN.completed) simulated = 'completed';
+  else if(m >= STAGE_AT_MIN.shipped) simulated = 'shipped';
+  else if(m >= STAGE_AT_MIN.in_production) simulated = 'in_production';
+  else if(m >= STAGE_AT_MIN.proof_review) simulated = 'proof_review';
+  const realIdx = STATUS_ORDER.indexOf(order.status);
+  const simIdx = STATUS_ORDER.indexOf(simulated);
+  return STATUS_ORDER[Math.max(realIdx, simIdx)];
+}
+
+function hashStr(s){
+  let h = 0;
+  for(let i=0; i<s.length; i++){ h = (h * 31 + s.charCodeAt(i)) >>> 0; }
+  return h;
+}
+
+// Bangun daftar checkpoint kota untuk order yang sudah 'shipped'/'completed'.
+// Kota tujuan diambil dari shipping_address; kota transit dipilih dummy
+// (tapi konsisten per order, lewat hash id) dari daftar kota hub.
+function buildTracking(order, effectiveStatus){
+  const destCity = order.shipping_address?.city || 'Kota Tujuan';
+  const h = hashStr(order.id || order.order_no || '');
+  let hub = TRANSIT_HUBS[h % TRANSIT_HUBS.length];
+  if(hub.toLowerCase() === destCity.toLowerCase()) hub = TRANSIT_HUBS[(h+1) % TRANSIT_HUBS.length];
+
+  const created = new Date(order.created_at).getTime();
+  const t0 = new Date(created + STAGE_AT_MIN.shipped * 60000);
+  const t1 = new Date(created + (STAGE_AT_MIN.shipped + 3) * 60000);
+  const t2 = new Date(created + (STAGE_AT_MIN.shipped + 6) * 60000);
+
+  const m = minutesSince(order.created_at);
+  const isDone = effectiveStatus === 'completed';
+  let currentIdx;
+  if(isDone) currentIdx = 2;
+  else if(m >= STAGE_AT_MIN.shipped + 6) currentIdx = 2;
+  else if(m >= STAGE_AT_MIN.shipped + 3) currentIdx = 1;
+  else currentIdx = 0;
+
+  const steps = [
+    { city: 'Sidoarjo', label: 'Paket dikemas & diserahkan ke kurir dari gudang produksi Tandur', time: t0 },
+    { city: hub, label: 'Transit di gudang sortir', time: t1 },
+    { city: destCity, label: isDone ? 'Paket diterima' : 'Tiba di kota tujuan, diantar kurir lokal', time: t2 }
+  ];
+
+  return steps.map((s, i) => ({
+    ...s,
+    state: isDone ? 'done' : (i < currentIdx ? 'done' : (i === currentIdx ? 'current' : 'upcoming'))
+  }));
+}
+
+function renderTracking(order, effectiveStatus){
+  const steps = buildTracking(order, effectiveStatus);
+  const current = steps.find(s => s.state === 'current') || steps[steps.length - 1];
+  const isDone = effectiveStatus === 'completed';
+  const bannerHtml = `
+    <div class="track-now ${isDone ? 'done' : ''}">
+      <span class="dot"></span>
+      <span>${isDone ? `Paket sudah <b>diterima</b> di ${current.city}` : `Posisi saat ini: <b>${current.city}</b>`}</span>
+    </div>`;
+  const listHtml = `<ul class="track-list">` + steps.filter(s => s.state !== 'upcoming').map(s => `
+    <li class="track-item ${s.state}">
+      <div class="track-city">${s.city}</div>
+      <div class="track-label">${s.label}</div>
+      <div class="track-time">${waktu(s.time)}</div>
+    </li>
+  `).join('') + `</ul>`;
+  return `<div class="track-wrap"><div class="track-title">Lacak Pengiriman</div>${bannerHtml}${listHtml}</div>`;
+}
+
+// Fallback dummy untuk riwayat proof kalau order_proofs kosong di DB
+// (belum ada alur admin yang mengisinya), supaya tampilan mengikuti
+// status simulasi di atas alih-alih diam di "belum ada proof".
+function dummyProofs(order, effectiveStatus){
+  const stageIdx = STATUS_ORDER.indexOf(effectiveStatus);
+  if(stageIdx < 2) return [];
+  const created = new Date(order.created_at).getTime();
+  return [{
+    id: 'dummy-1', version: 1,
+    status: stageIdx === 2 ? 'pending' : 'approved',
+    revision_notes: null,
+    created_at: new Date(created + STAGE_AT_MIN.proof_review * 60000).toISOString()
+  }];
+}
+
+function renderProofSection(order, effectiveStatus, realProofs){
+  const proofs = (realProofs && realProofs.length > 0) ? realProofs : dummyProofs(order, effectiveStatus);
+  if(proofs.length === 0){
+    const waitingNote = effectiveStatus === 'draft'
+      ? 'Order belum di-checkout.'
+      : 'Tim desain sedang menyiapkan proof — akan muncul di sini begitu siap direview.';
+    return `<div class="proof-note">${waitingNote}</div>`;
+  }
+  return `<div style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; color:#8f8a78; margin-bottom:6px;">Riwayat Proof</div>` +
+    proofs.map(p => `
+      <div class="proof-row">
+        <span>Versi ${p.version} · ${waktu(p.created_at)}${p.revision_notes ? ' — ' + p.revision_notes : ''}</span>
+        <span class="proof-status ${p.status}">${PROOF_STATUS_LABEL[p.status] || p.status}</span>
+      </div>
+    `).join('');
+}
 
 async function init(){
   const user = await getCurrentUser();
@@ -138,55 +296,61 @@ async function init(){
     return;
   }
 
-  listEl.innerHTML = orders.map(o => `
-    <div class="order-card" data-id="${o.id}">
-      <div class="order-card-top">
-        <div>
-          <div class="order-no">${o.order_no}</div>
-          <div class="order-title">${o.product_types?.name || 'Produk'} · ${o.size_code} · ${o.quantity} pcs</div>
-          <div class="order-meta">Dipesan ${tanggal(o.created_at)}</div>
-        </div>
-        <div style="display:flex; align-items:center; gap:12px;">
-          <span class="order-price">${rupiah(o.total_price)}</span>
-          <span class="status-pill ${o.status}">${STATUS_LABEL[o.status] || o.status}</span>
-          <svg class="chev-toggle" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-        </div>
-      </div>
-      <div class="order-detail" id="detail-${o.id}">
-        <div class="row"><span>Ukuran</span><span>${o.size_code}${o.custom_dimensions ? ' (custom: ' + o.custom_dimensions.w + '×' + o.custom_dimensions.d + '×' + o.custom_dimensions.h + ' cm)' : ''}</span></div>
-        <div class="row"><span>Jumlah</span><span>${o.quantity} pcs</span></div>
-        <div class="row"><span>Harga satuan</span><span>${rupiah(o.unit_price)}</span></div>
-        ${o.notes ? `<div class="row"><span>Catatan</span><span>${o.notes}</span></div>` : ''}
-        <div id="proofs-${o.id}" style="margin-top:12px;"></div>
-      </div>
-    </div>
-  `).join('');
+  // Ambil semua riwayat proof sekaligus di awal (bukan lazy-load per klik
+  // seperti sebelumnya) supaya render ulang berkala di bawah tidak perlu
+  // menunggu network lagi tiap kali status disimulasikan maju.
+  const proofsMap = {};
+  await Promise.all(orders.map(async o => {
+    proofsMap[o.id] = await getOrderProofs(o.id);
+  }));
 
-  listEl.querySelectorAll('.order-card').forEach(card => {
-    card.addEventListener('click', async () => {
-      const wasOpen = card.classList.contains('open');
-      card.classList.toggle('open');
-      if(!wasOpen){
-        const id = card.dataset.id;
-        const proofsWrap = document.getElementById(`proofs-${id}`);
-        if(!proofsWrap.dataset.loaded){
-          const proofs = await getOrderProofs(id);
-          proofsWrap.dataset.loaded = '1';
-          if(proofs.length === 0){
-            proofsWrap.innerHTML = `<div style="color:#8f8a78; font-size:12.5px;">Belum ada proof desain untuk order ini.</div>`;
-          } else {
-            proofsWrap.innerHTML = `<div style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; color:#8f8a78; margin-bottom:6px;">Riwayat Proof</div>` +
-              proofs.map(p => `
-                <div class="proof-row">
-                  <span>Versi ${p.version} · ${tanggal(p.created_at)}${p.revision_notes ? ' — ' + p.revision_notes : ''}</span>
-                  <span class="proof-status ${p.status}">${PROOF_STATUS_LABEL[p.status] || p.status}</span>
-                </div>
-              `).join('');
-          }
-        }
-      }
-    });
+  const openIds = new Set();
+
+  function renderList(){
+    listEl.innerHTML = orders.map(o => {
+      const eff = getEffectiveStatus(o);
+      const isOpen = openIds.has(o.id);
+      return `
+      <div class="order-card${isOpen ? ' open' : ''}" data-id="${o.id}">
+        <div class="order-card-top">
+          <div>
+            <div class="order-no">${o.order_no}</div>
+            <div class="order-title">${o.product_types?.name || 'Produk'} · ${o.size_code} · ${o.quantity} pcs</div>
+            <div class="order-meta">Dipesan ${tanggal(o.created_at)}</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <span class="order-price">${rupiah(o.total_price)}</span>
+            <span class="status-pill ${eff}">${STATUS_LABEL[eff] || eff}</span>
+            <svg class="chev-toggle" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+        </div>
+        <div class="order-detail" id="detail-${o.id}">
+          <div class="row"><span>Ukuran</span><span>${o.size_code}${o.custom_dimensions ? ' (custom: ' + o.custom_dimensions.w + '×' + o.custom_dimensions.d + '×' + o.custom_dimensions.h + ' cm)' : ''}</span></div>
+          <div class="row"><span>Jumlah</span><span>${o.quantity} pcs</span></div>
+          <div class="row"><span>Harga satuan</span><span>${rupiah(o.unit_price)}</span></div>
+          ${o.notes ? `<div class="row"><span>Catatan</span><span>${o.notes}</span></div>` : ''}
+          <div style="margin-top:12px;">${renderProofSection(o, eff, proofsMap[o.id])}</div>
+          ${(eff === 'shipped' || eff === 'completed') ? renderTracking(o, eff) : ''}
+        </div>
+      </div>
+    `;
+    }).join('');
+  }
+
+  // Event delegation: satu listener untuk semua kartu, tetap berfungsi
+  // setelah listEl.innerHTML diganti ulang oleh renderList().
+  listEl.addEventListener('click', (e) => {
+    const card = e.target.closest('.order-card');
+    if(!card) return;
+    const id = card.dataset.id;
+    if(openIds.has(id)) openIds.delete(id); else openIds.add(id);
+    card.classList.toggle('open');
   });
+
+  renderList();
+  // Refresh tampilan tiap 5 detik supaya status & lokasi pengiriman
+  // simulasi terlihat bergerak maju tanpa perlu reload manual.
+  setInterval(renderList, 5000);
 }
 
 supabase.auth.onAuthStateChange(()=> init());

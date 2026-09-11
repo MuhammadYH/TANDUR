@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="admin.css">
+<script src="vendor/chart.umd.js"></script>
 </head>
 <body>
 <div class="admin-scrim" id="scrim"></div>
@@ -30,10 +31,9 @@
     </nav>
     <div class="admin-side-foot">
       <div class="admin-user">
-        <strong id="adminName">—</strong>
-        <span id="adminEmail"></span>
+        <strong>Mode MVP</strong>
+        <span>Akses langsung — tanpa login</span>
       </div>
-      <button class="admin-logout" id="logoutBtn">Keluar</button>
     </div>
   </aside>
 
@@ -58,7 +58,6 @@
 </div>
 
 <script type="module">
-import { requireAdmin, adminLogout } from './admin-auth.js';
 import { getRiwayatTimbangGrouped } from './admin-data.js';
 
 const content = document.getElementById('content');
@@ -74,16 +73,9 @@ scrim.addEventListener('click', () => {
   sidebar.classList.remove('open'); scrim.classList.remove('open');
 });
 
-// ---------- auth guard ----------
+// ---------- akses langsung (MVP, tanpa login) ----------
 let ALL_GROUPS = [];
-
-const admin = await requireAdmin();
-if (admin) {
-  document.getElementById('adminName').textContent = admin.full_name || 'Admin';
-  document.getElementById('adminEmail').textContent = admin.email || '';
-  document.getElementById('logoutBtn').addEventListener('click', adminLogout);
-  init();
-}
+init();
 
 function fmtKg(n){
   return Number(n).toLocaleString('id-ID', { maximumFractionDigits: 1 });
@@ -95,6 +87,18 @@ function escapeHtml(s){
 async function init(){
   ALL_GROUPS = await getRiwayatTimbangGrouped();
   loading.remove();
+
+  if (ALL_GROUPS.some(k => k.totalKg > 0)) {
+    const chartPanel = document.createElement('div');
+    chartPanel.className = 'panel';
+    chartPanel.innerHTML = `
+      <h2>Perbandingan Kelompok Tani</h2>
+      <div class="ph-sub">Total limbah terkumpul, 8 kelompok teratas</div>
+      <div class="chart-wrap chart-wrap-bar"><canvas id="kelompokChart"></canvas></div>
+    `;
+    content.appendChild(chartPanel);
+    renderKelompokChart(ALL_GROUPS.slice(0, 8));
+  }
 
   const toolbar = document.createElement('div');
   toolbar.className = 'rt-toolbar';
@@ -165,6 +169,51 @@ function render(groups){
 
   list.querySelectorAll('.grp-head').forEach(head => {
     head.addEventListener('click', () => head.closest('.grp-card').classList.toggle('open'));
+  });
+}
+
+function renderKelompokChart(groups){
+  const ctx = document.getElementById('kelompokChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: groups.map(k => k.nama),
+      datasets: [{
+        data: groups.map(k => k.totalKg),
+        backgroundColor: '#2E9C4B',
+        borderRadius: 2,
+        maxBarThickness: 26
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0E3A63',
+          titleFont: { family: 'IBM Plex Sans', size: 12 },
+          bodyFont: { family: 'IBM Plex Mono', size: 12 },
+          padding: 10,
+          displayColors: false,
+          callbacks: {
+            label: (item) => item.parsed.x.toLocaleString('id-ID') + ' kg'
+          }
+        }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          grid: { color: 'rgba(27,23,16,0.08)' },
+          ticks: { font: { family: 'IBM Plex Mono', size: 10.5 }, color: 'rgba(27,23,16,0.55)' }
+        },
+        y: {
+          grid: { display: false },
+          ticks: { font: { family: 'IBM Plex Sans', size: 12.5 }, color: '#1B1710' }
+        }
+      }
+    }
   });
 }
 </script>

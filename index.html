@@ -323,48 +323,6 @@
   <div class="wrap foot-bottom"><span>© 2026 Tandur. Semua hak dilindungi.</span><span>DIELINE NO. 00214-B · REV 3</span></div>
 </footer>
 
-<div class="checkout-overlay" id="checkoutOverlay">
-  <div class="checkout-modal">
-    <button class="checkout-close" id="checkoutCloseBtn" aria-label="Tutup">×</button>
-    <h3>Detail Pengiriman</h3>
-    <div class="sub">Isi alamat tujuan, lalu konfirmasi untuk mengubah keranjang jadi pesanan.</div>
-    <form id="checkoutForm">
-      <div class="checkout-field">
-        <label>Nama Penerima</label>
-        <input type="text" id="coRecipient" required>
-      </div>
-      <div class="checkout-field">
-        <label>Nomor Telepon</label>
-        <input type="text" id="coPhone" required>
-      </div>
-      <div class="checkout-field">
-        <label>Alamat Lengkap</label>
-        <textarea id="coAddress" required placeholder="Jalan, nomor, kelurahan, kecamatan"></textarea>
-      </div>
-      <div class="checkout-row2">
-        <div class="checkout-field">
-          <label>Kota</label>
-          <input type="text" id="coCity" required>
-        </div>
-        <div class="checkout-field">
-          <label>Kode Pos</label>
-          <input type="text" id="coPostal">
-        </div>
-      </div>
-      <div class="checkout-field">
-        <label>Catatan (opsional)</label>
-        <textarea id="coNotes" placeholder="Instruksi khusus untuk tim produksi/pengiriman"></textarea>
-      </div>
-      <div class="checkout-summary" id="checkoutSummary"></div>
-      <div class="checkout-actions">
-        <button type="button" class="btn" id="checkoutCancelBtn">Batal</button>
-        <button type="submit" class="btn btn-solid" id="checkoutSubmitBtn">Konfirmasi Pesanan</button>
-      </div>
-      <div class="checkout-msg" id="checkoutMsg"></div>
-    </form>
-  </div>
-</div>
-
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-modal">
     <button class="auth-close" id="authCloseBtn" aria-label="Tutup">×</button>
@@ -403,7 +361,7 @@
 </div>
 
 <script type="module">
-import { supabase, getCurrentUser, signInWithEmail, signOut, getCartItems, removeCartItem, getAllProductSizes, getProfile, checkoutCart, getProductTypeMap, addToCart } from './supabase-client.js';
+import { supabase, getCurrentUser, signInWithEmail, signOut, getCartItems, removeCartItem, getAllProductSizes } from './supabase-client.js';
 
 const rupiah = (n) => 'Rp' + Math.round(n).toLocaleString('id-ID');
 
@@ -513,63 +471,21 @@ async function requireAuthThenGo(e, url){
 document.getElementById('navTrackOrder').addEventListener('click', (e)=> requireAuthThenGo(e, 'lacak-pesanan.html'));
 document.getElementById('navDesignHistory').addEventListener('click', (e)=> requireAuthThenGo(e, 'riwayat-desain.html'));
 
-/* ---- checkout modal: ubah isi cart_items jadi baris orders ---- */
-const checkoutOverlay = document.getElementById('checkoutOverlay');
-
-async function openCheckout(){
+/* ---- "Lanjut ke Checkout" di dropdown keranjang: langsung ke halaman
+   checkout.html, memakai isi keranjang yang sudah ada. ---- */
+document.getElementById('cartCheckoutBtn').addEventListener('click', async ()=>{
   const user = await getCurrentUser();
   if(!user){
     openAuthRequired('Masuk dulu ya untuk checkout.');
     return;
   }
-  const items = await getCartItems();
-  if(items.length === 0){
-    alert('Keranjang kamu masih kosong.');
-    return;
-  }
-
-  // prefill dari profil kalau sudah pernah diisi
-  const profile = await getProfile();
-  document.getElementById('coRecipient').value = profile?.full_name || '';
-  document.getElementById('coPhone').value = profile?.phone || '';
-  document.getElementById('coAddress').value = '';
-  document.getElementById('coCity').value = '';
-  document.getElementById('coPostal').value = '';
-  document.getElementById('coNotes').value = '';
-  document.getElementById('checkoutMsg').textContent = '';
-  document.getElementById('checkoutMsg').className = 'checkout-msg';
-
-  const sizes = await getAllProductSizes();
-  const multiplierFor = (productTypeId, sizeCode) => {
-    const row = sizes.find(s => s.product_type_id === productTypeId && s.size_code === sizeCode);
-    return row ? Number(row.price_multiplier) : 1;
-  };
-  let total = 0;
-  const summaryRows = items.map(item => {
-    const pt = item.product_types;
-    const basePrice = pt ? Number(pt.base_price_per_pcs) : 0;
-    const mult = pt ? multiplierFor(pt.id, item.size_code) : 1;
-    const subtotal = basePrice * mult * item.quantity;
-    total += subtotal;
-    return `<div class="row"><span>${pt ? pt.name : 'Produk'} · ${item.size_code} · ${item.quantity} pcs</span><span>${rupiah(subtotal)}</span></div>`;
-  }).join('');
-  document.getElementById('checkoutSummary').innerHTML = summaryRows + `<div class="row total"><span>Estimasi Total</span><span>${rupiah(total)}</span></div>`;
-
-  checkoutOverlay.classList.add('open');
-}
-
-document.getElementById('cartCheckoutBtn').addEventListener('click', openCheckout);
+  window.location.href = 'checkout.html';
+});
 
 /* ---- tombol "Beli Langsung" di kartu katalog: buat orang yang tidak
-   butuh kustomisasi desain, langsung tambah ke keranjang dengan ukuran M
-   default (kuantitas = MOQ produk) lalu langsung buka modal checkout,
-   tanpa perlu mampir ke editor. ---- */
-let productTypeMapCache = null;
-async function getProductTypeMapCached(){
-  if(!productTypeMapCache) productTypeMapCache = await getProductTypeMap();
-  return productTypeMapCache;
-}
-
+   butuh kustomisasi desain, langsung diarahkan ke halaman checkout dengan
+   produk & ukuran M (kuantitas = MOQ produk) sudah disiapkan lewat
+   parameter URL, tanpa perlu mampir ke editor atau keranjang dulu. ---- */
 document.querySelectorAll('[data-buy]').forEach(btn=>{
   btn.addEventListener('click', async ()=>{
     const user = await getCurrentUser();
@@ -577,72 +493,13 @@ document.querySelectorAll('[data-buy]').forEach(btn=>{
       openAuthRequired('Masuk dulu ya untuk membeli produk ini.');
       return;
     }
-
-    const originalLabel = btn.textContent;
-    btn.disabled = true;
-    btn.classList.add('is-loading');
-
-    const typeMap = await getProductTypeMapCached();
-    const productType = typeMap[btn.dataset.buy];
-    const { error } = await addToCart({
-      productTypeId: productType ? productType.id : null,
-      designId: null,
-      sizeCode: btn.dataset.size || 'M',
-      customDimensions: null,
-      quantity: parseInt(btn.dataset.qty, 10) || 1
+    const params = new URLSearchParams({
+      buy: btn.dataset.buy,
+      size: btn.dataset.size || 'M',
+      qty: btn.dataset.qty || '1'
     });
-
-    btn.disabled = false;
-    btn.classList.remove('is-loading');
-    btn.textContent = originalLabel;
-
-    if(error){
-      alert('Gagal menambah ke keranjang: ' + error.message);
-      return;
-    }
-
-    await refreshCart(user);
-    openCheckout();
+    window.location.href = 'checkout.html?' + params.toString();
   });
-});
-document.getElementById('checkoutCloseBtn').addEventListener('click', ()=> checkoutOverlay.classList.remove('open'));
-document.getElementById('checkoutCancelBtn').addEventListener('click', ()=> checkoutOverlay.classList.remove('open'));
-checkoutOverlay.addEventListener('click', (e)=>{ if(e.target === checkoutOverlay) checkoutOverlay.classList.remove('open'); });
-
-document.getElementById('checkoutForm').addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  const msg = document.getElementById('checkoutMsg');
-  const submitBtn = document.getElementById('checkoutSubmitBtn');
-  submitBtn.disabled = true;
-  submitBtn.classList.add('is-loading');
-  msg.textContent = '';
-  msg.className = 'checkout-msg';
-
-  const shippingAddress = {
-    recipient: document.getElementById('coRecipient').value.trim(),
-    phone: document.getElementById('coPhone').value.trim(),
-    address: document.getElementById('coAddress').value.trim(),
-    city: document.getElementById('coCity').value.trim(),
-    postal_code: document.getElementById('coPostal').value.trim() || null
-  };
-  const notes = document.getElementById('coNotes').value.trim() || null;
-
-  const { data, error } = await checkoutCart({ shippingAddress, notes });
-
-  submitBtn.disabled = false;
-  submitBtn.classList.remove('is-loading');
-
-  if(error){
-    msg.textContent = 'Gagal checkout: ' + error.message;
-    msg.className = 'checkout-msg error';
-    return;
-  }
-
-  msg.textContent = `✓ ${data.length} pesanan berhasil dibuat. Mengalihkan ke Lacak Pesanan…`;
-  msg.className = 'checkout-msg success';
-  const user = await getCurrentUser();
-  await refreshCart(user);
-  setTimeout(()=>{ window.location.href = 'lacak-pesanan.html'; }, 1200);
 });
 
 /* ---- Modal peringatan: aksi butuh login ---- */

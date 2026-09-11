@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="admin.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="vendor/chart.umd.js"></script>
 </head>
 <body>
 <div class="admin-scrim" id="scrim"></div>
@@ -31,10 +31,9 @@
     </nav>
     <div class="admin-side-foot">
       <div class="admin-user">
-        <strong id="adminName">—</strong>
-        <span id="adminEmail"></span>
+        <strong>Mode MVP</strong>
+        <span>Akses langsung — tanpa login</span>
       </div>
-      <button class="admin-logout" id="logoutBtn">Keluar</button>
     </div>
   </aside>
 
@@ -59,8 +58,7 @@
 </div>
 
 <script type="module">
-import { requireAdmin, adminLogout } from './admin-auth.js';
-import { getDashboardStats } from './admin-data.js';
+import { getDashboardStats, getSetoranTrend } from './admin-data.js';
 
 const content = document.getElementById('content');
 const loading = document.getElementById('loading');
@@ -75,14 +73,8 @@ scrim.addEventListener('click', () => {
   sidebar.classList.remove('open'); scrim.classList.remove('open');
 });
 
-// ---------- auth guard ----------
-const admin = await requireAdmin();
-if (admin) {
-  document.getElementById('adminName').textContent = admin.full_name || 'Admin';
-  document.getElementById('adminEmail').textContent = admin.email || '';
-  document.getElementById('logoutBtn').addEventListener('click', adminLogout);
-  init();
-}
+// ---------- akses langsung (MVP, tanpa login) ----------
+init();
 
 function fmtKg(n){
   return Number(n).toLocaleString('id-ID', { maximumFractionDigits: 1 });
@@ -115,24 +107,6 @@ async function init(){
   `;
   content.appendChild(statGrid);
 
-  // ---- panel: tren setoran ----
-  const trendPanel = document.createElement('div');
-  trendPanel.className = 'panel';
-  if (stats.trend.length === 0) {
-    trendPanel.innerHTML = `
-      <h2>Tren Setoran</h2>
-      <div class="ph-sub">Total limbah (kg) per tanggal</div>
-      <div class="empty-state">Belum ada setoran tercatat.</div>
-    `;
-  } else {
-    trendPanel.innerHTML = `
-      <h2>Tren Setoran</h2>
-      <div class="ph-sub">Total limbah (kg) per tanggal</div>
-      <div class="chart-wrap trend"><canvas id="trendChart"></canvas></div>
-    `;
-  }
-  content.appendChild(trendPanel);
-
   const panelRow = document.createElement('div');
   panelRow.className = 'panel-row';
 
@@ -146,10 +120,19 @@ async function init(){
       <div class="empty-state">Belum ada data kelompok tani.</div>
     `;
   } else {
+    const maxKg = Math.max(...stats.topKelompok.map(k => k.totalKg), 1);
+    const rows = stats.topKelompok.map((k, i) => `
+      <div class="rank-row">
+        <span class="n">${i + 1}</span>
+        <span class="name">${escapeHtml(k.nama)}</span>
+        <span class="bar-track"><span class="bar-fill" style="width:${(k.totalKg / maxKg * 100).toFixed(1)}%"></span></span>
+        <span class="kg">${fmtKg(k.totalKg)} kg</span>
+      </div>
+    `).join('');
     topPanel.innerHTML = `
       <h2>Kelompok Tani Teratas</h2>
       <div class="ph-sub">Berdasarkan total limbah terkumpul</div>
-      <div class="chart-wrap"><canvas id="topChart"></canvas></div>
+      ${rows}
     `;
   }
   panelRow.appendChild(topPanel);
@@ -181,74 +164,77 @@ async function init(){
 
   content.appendChild(panelRow);
 
-  renderCharts(stats);
+  // ---- panel: tren setoran (grafik) ----
+  const trendPanel = document.createElement('div');
+  trendPanel.className = 'panel';
+  trendPanel.innerHTML = `
+    <h2>Tren Setoran</h2>
+    <div class="ph-sub">Total limbah masuk per hari, 14 hari terakhir</div>
+    <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+  `;
+  content.appendChild(trendPanel);
+
+  const trend = await getSetoranTrend(14);
+  renderTrendChart(trend);
 }
 
-// ---------- warna & style chart, selaras dengan palet admin.css ----------
-const CHART_NAVY = '#0E3A63';
-const CHART_KRAFT = '#2E9C4B';
-const CHART_KRAFT_FILL = 'rgba(46,156,75,0.12)';
-const CHART_INK_SOFT = 'rgba(27,23,16,0.55)';
-const CHART_LINE = 'rgba(27,23,16,0.1)';
-const CHART_FONT = "'IBM Plex Mono', monospace";
-
-function renderCharts(stats){
-  if (stats.trend.length > 0) {
-    const ctx = document.getElementById('trendChart');
-    new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: stats.trend.map(t => fmtDate(t.tanggal)),
-        datasets: [{
-          label: 'Total kg',
-          data: stats.trend.map(t => t.totalKg),
-          borderColor: CHART_KRAFT,
-          backgroundColor: CHART_KRAFT_FILL,
-          fill: true,
-          tension: 0.25,
-          pointRadius: 2.5,
-          pointBackgroundColor: CHART_KRAFT,
-          borderWidth: 2
-        }]
+function renderTrendChart(trend){
+  const hasData = trend.data.some(v => v > 0);
+  if (!hasData) {
+    document.querySelector('.chart-wrap').outerHTML = '<div class="empty-state">Belum ada setoran dalam 14 hari terakhir.</div>';
+    return;
+  }
+  const labels = trend.labels.map(d =>
+    new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short' }).format(new Date(d + 'T00:00:00'))
+  );
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Kg per hari',
+        data: trend.data,
+        borderColor: '#2E9C4B',
+        backgroundColor: 'rgba(46,156,75,0.12)',
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        pointBackgroundColor: '#2E9C4B',
+        tension: 0.25,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0E3A63',
+          titleFont: { family: 'IBM Plex Mono', size: 11 },
+          bodyFont: { family: 'IBM Plex Mono', size: 12 },
+          padding: 10,
+          displayColors: false,
+          callbacks: {
+            label: (item) => item.parsed.y.toLocaleString('id-ID') + ' kg'
+          }
+        }
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { ticks: { font: { family: CHART_FONT, size: 10.5 }, color: CHART_INK_SOFT }, grid: { display: false } },
-          y: { beginAtZero: true, ticks: { font: { family: CHART_FONT, size: 10.5 }, color: CHART_INK_SOFT }, grid: { color: CHART_LINE } }
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { family: 'IBM Plex Mono', size: 10.5 }, color: 'rgba(27,23,16,0.55)', maxRotation: 0 }
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(27,23,16,0.08)' },
+          ticks: { font: { family: 'IBM Plex Mono', size: 10.5 }, color: 'rgba(27,23,16,0.55)' }
         }
       }
-    });
-  }
-
-  if (stats.topKelompok.length > 0) {
-    const ctx = document.getElementById('topChart');
-    new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: stats.topKelompok.map(k => k.nama),
-        datasets: [{
-          label: 'Total kg',
-          data: stats.topKelompok.map(k => k.totalKg),
-          backgroundColor: CHART_NAVY,
-          borderRadius: 2,
-          maxBarThickness: 34
-        }]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { beginAtZero: true, ticks: { font: { family: CHART_FONT, size: 10.5 }, color: CHART_INK_SOFT }, grid: { color: CHART_LINE } },
-          y: { ticks: { font: { family: "'IBM Plex Sans', sans-serif", size: 12.5 }, color: '#1B1710' }, grid: { display: false } }
-        }
-      }
-    });
-  }
+    }
+  });
 }
 
 function escapeHtml(s){
